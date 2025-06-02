@@ -1,3 +1,5 @@
+import 'package:bartech_app/data/models/cart_item.dart';
+import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_customize_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/acompa%C3%B1amiento_list.dart';
 import 'package:bartech_app/presentation/screens/details/component/ingredient_selector.dart';
@@ -359,7 +361,23 @@ class _DialogScreenContent extends StatelessWidget {
                             height: 48,
                             child: ElevatedButton(
                               onPressed: () {
-                                // Acción de agregar al carrito aquí
+                                final itemCart = CartItem(
+                                  product: product,
+                                  quantity: state.quantity,
+                                  accompaniments: state.accompaniments,
+                                );
+                                context.read<CartBloc>().add(
+                                  AddToCart(itemCart),
+                                );
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${product.itemName} agregado al Pedido',
+                                    ),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
                                 context.pop();
                               },
                               style: ElevatedButton.styleFrom(

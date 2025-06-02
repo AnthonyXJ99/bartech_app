@@ -1,5 +1,7 @@
+import 'package:bartech_app/data/models/cart_item.dart';
 import 'package:bartech_app/data/models/model_groups.dart';
 import 'package:bartech_app/data/models/model_products.dart';
+import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_state.dart';
@@ -7,6 +9,7 @@ import 'package:bartech_app/presentation/screens/details/dialog_screen.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key, required this.carruselImages});
@@ -14,10 +17,7 @@ class DetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => DetailsBloc(),
-      child: DetailsView(images: carruselImages),
-    );
+    return DetailsView(images: carruselImages);
   }
 }
 
@@ -33,6 +33,69 @@ class DetailsView extends StatelessWidget {
     final List<GroupItems> carruselImages = images;
 
     return Scaffold(
+      floatingActionButton: BlocBuilder<CartBloc, CartState>(
+        builder: (context, state) {
+          final int cartCount = state.items.length;
+
+          return FloatingActionButton.extended(
+            onPressed: () {
+              context.go("/products/cart");
+            },
+            backgroundColor: Colors.orange.shade600,
+            elevation: 8,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.shopping_cart_outlined,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                // Badge solo si hay productos
+                if (cartCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 19,
+                        minHeight: 19,
+                      ),
+                      child: Text(
+                        '$cartCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            label: const Text(
+              "PEDIDOS",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+                letterSpacing: 1.2,
+              ),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          );
+        },
+      ),
+
       backgroundColor: Colors.white,
       body: Column(
         children: [
@@ -63,6 +126,7 @@ class DetailsView extends StatelessWidget {
             builder: (context, state) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Image.asset(
                     'assets/choose/logo.png',
@@ -70,19 +134,19 @@ class DetailsView extends StatelessWidget {
                     height: 40,
                     fit: BoxFit.cover,
                   ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green,
-                      side: const BorderSide(color: Colors.green, width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Cupón'),
-                  ),
+                  // const Spacer(),
+                  // ElevatedButton(
+                  //   onPressed: () {},
+                  //   style: ElevatedButton.styleFrom(
+                  //     foregroundColor: Colors.white,
+                  //     backgroundColor: Colors.green,
+                  //     side: const BorderSide(color: Colors.green, width: 2),
+                  //     shape: RoundedRectangleBorder(
+                  //       borderRadius: BorderRadius.circular(8),
+                  //     ),
+                  //   ),
+                  //   child: const Text('Cupón'),
+                  // ),
                   const SizedBox(width: 10),
                   Text(
                     state.selectedRecipeName,
@@ -402,12 +466,16 @@ class _ProductCardState extends State<_ProductCard> {
                                     await Future.delayed(
                                       const Duration(milliseconds: 700),
                                     );
+
                                     setState(() => isAdding = false);
+                                    context.read<CartBloc>().add(
+                                      AddToCart(CartItem(product: product)),
+                                    );
                                     // Aquí puedes agregar lógica real de carrito
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          '${product.itemName} agregado al carrito',
+                                          '${product.itemName} agregado al Pedido',
                                         ),
                                         duration: const Duration(seconds: 1),
                                       ),
