@@ -77,8 +77,8 @@ class WelcomeScreen extends StatelessWidget {
                   color: Colors.green, // Color de fondo
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(
-                        0.5,
+                      color: Colors.black.withAlpha(
+                        127,
                       ), // Sombra para el efecto de AppBar
                       blurRadius: 10.0, // Difuminar la sombra
                       offset: const Offset(

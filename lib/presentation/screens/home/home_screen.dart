@@ -39,7 +39,7 @@ class HomeScreen extends StatelessWidget {
                     shadows: [
                       Shadow(
                         blurRadius: 6,
-                        color: Colors.black.withOpacity(0.22),
+                        color: Colors.black.withAlpha(57),
                         offset: const Offset(1, 2),
                       ),
                     ],
@@ -164,7 +164,7 @@ class _MenuButton extends StatelessWidget {
             border: Border.all(color: accent, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withAlpha(21),
                 blurRadius: 14,
                 offset: const Offset(0, 4),
               ),

@@ -2,6 +2,7 @@ import 'package:bartech_app/data/groups_data.dart';
 import 'package:bartech_app/presentation/screens/cart/cart_screen.dart';
 import 'package:bartech_app/presentation/screens/details/details_screen.dart';
 import 'package:bartech_app/presentation/screens/home/home_screen.dart';
+import 'package:bartech_app/presentation/screens/payment/payment_screen.dart';
 import 'package:bartech_app/presentation/screens/welcome/welcome_screen.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,7 +17,18 @@ final appRouter = GoRouter(
       path: "/products",
       builder: (context, state) => DetailsView(images: carruselImages),
       routes: [
-        GoRoute(path: "/cart", builder: (context, state) => CartScreen()),
+        GoRoute(
+          path: "/cart",
+          builder: (context, state) => CartScreen(),
+          routes: [
+            GoRoute(
+              path: "/payment/:ticketNumber",
+              builder: (context, state) => PaymentScreen(
+                ticketNumber: state.pathParameters['ticketNumber'] ?? '0',
+              ),
+            ),
+          ],
+        ),
       ],
     ),
   ],

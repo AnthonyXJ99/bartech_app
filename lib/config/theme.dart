@@ -80,7 +80,7 @@ final ThemeData fastFoodTheme = ThemeData(
   bottomNavigationBarTheme: BottomNavigationBarThemeData(
     backgroundColor: kWhiteColor,
     selectedItemColor: kPrimaryColor,
-    unselectedItemColor: kAccentColor.withOpacity(0.6),
+    unselectedItemColor: kAccentColor.withAlpha(153),
     showUnselectedLabels: true,
     type: BottomNavigationBarType.fixed,
     selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),

@@ -1,7 +1,7 @@
 import 'package:bartech_app/data/models/cart_item.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_customize_bloc.dart';
-import 'package:bartech_app/presentation/screens/details/component/acompa%C3%B1amiento_list.dart';
+import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
 import 'package:bartech_app/presentation/screens/details/component/ingredient_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:bartech_app/data/models/model_products.dart';
@@ -13,34 +13,38 @@ class DialogScreen extends StatelessWidget {
   final Products product;
 
   List<Map<String, dynamic>> get ingredients => [
-    {"name": "Cheese", "icon": Icons.egg_alt, "amount": 1},
-    {"name": "Onion", "icon": Icons.ramen_dining, "amount": 1},
-    {"name": "Lettuce", "icon": Icons.grass, "amount": 1},
-    {"name": "Tomato", "icon": Icons.local_pizza, "amount": 1},
-    {"name": "Pickles", "icon": Icons.eco, "amount": 1},
-    {"name": "Bacon", "icon": Icons.lunch_dining, "amount": 1},
-    {"name": "Ketchup", "icon": Icons.water_drop, "amount": 1},
-    {"name": "Mayonnaise", "icon": Icons.icecream, "amount": 1},
-    {"name": "Mustard", "icon": Icons.local_fire_department, "amount": 1},
-    {"name": "Mushroom", "icon": Icons.restaurant, "amount": 1},
+    {"name": "Queso", "icon": Icons.egg_alt, "amount": 1},
+    {"name": "Cebolla", "icon": Icons.ramen_dining, "amount": 1},
+    {"name": "Lechuga", "icon": Icons.grass, "amount": 1},
+    {"name": "Tomate", "icon": Icons.local_pizza, "amount": 1},
+    {"name": "Pepinillos", "icon": Icons.eco, "amount": 1},
+    {"name": "Tocino", "icon": Icons.lunch_dining, "amount": 1},
+    {"name": "Kétchup", "icon": Icons.water_drop, "amount": 1},
+    {"name": "Mayonesa", "icon": Icons.icecream, "amount": 1},
+    {"name": "Mostaza", "icon": Icons.local_fire_department, "amount": 1},
+    {"name": "Champiñón", "icon": Icons.restaurant, "amount": 1},
     {"name": "Jalapeño", "icon": Icons.whatshot, "amount": 1},
-    {"name": "Egg", "icon": Icons.egg, "amount": 1},
-    {"name": "Avocado", "icon": Icons.emoji_nature, "amount": 1},
-    {"name": "Beef Patty", "icon": Icons.set_meal, "amount": 1},
-    {"name": "Chicken", "icon": Icons.fastfood, "amount": 1},
-    {"name": "Sesame", "icon": Icons.spa, "amount": 1},
+    {"name": "Huevo", "icon": Icons.egg, "amount": 1},
+    {"name": "Aguacate", "icon": Icons.emoji_nature, "amount": 1},
+    {
+      "name": "Carne de res para hamburguesa",
+      "icon": Icons.set_meal,
+      "amount": 1,
+    },
+    {"name": "Pollo", "icon": Icons.fastfood, "amount": 1},
+    {"name": "Sésamo", "icon": Icons.spa, "amount": 1},
   ];
 
   List<Map<String, dynamic>> get baseAccompaniments => [
     {
-      "name": "French Fries",
+      "name": "Papas Fritas",
       "icon": Icons.restaurant,
       "quantity": 0,
       "price": 3.00,
     },
-    {"name": "Salad", "icon": Icons.eco, "quantity": 0, "price": 2.50},
+    {"name": "Ensalada", "icon": Icons.eco, "quantity": 0, "price": 2.50},
     {
-      "name": "Soft Drink",
+      "name": "Refresco",
       "icon": Icons.local_drink,
       "quantity": 0,
       "price": 2.00,
@@ -365,6 +369,7 @@ class _DialogScreenContent extends StatelessWidget {
                                   product: product,
                                   quantity: state.quantity,
                                   accompaniments: state.accompaniments,
+                                  ingredients: state.ingredients,
                                 );
                                 context.read<CartBloc>().add(
                                   AddToCart(itemCart),

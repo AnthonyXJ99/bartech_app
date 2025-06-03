@@ -21,7 +21,6 @@ class CartScreen extends StatelessWidget {
               Expanded(
                 child: ListView.builder(
                   itemCount: state.items.length,
-
                   itemBuilder: (context, i) {
                     final cartItem = state.items[i];
                     final product = cartItem.product;
@@ -29,7 +28,6 @@ class CartScreen extends StatelessWidget {
                         product.price -
                         (product.discount > 0 ? product.discount : 0);
 
-                    // Calcula total acompañamientos de este item
                     double accompTotal = cartItem.accompaniments.fold(
                       0.0,
                       (sum, acc) =>
@@ -38,6 +36,13 @@ class CartScreen extends StatelessWidget {
                     );
                     final subtotal =
                         priceWithDiscount * cartItem.quantity + accompTotal;
+
+                    // Solo ingredientes > 0
+                    final selectedIngredients = cartItem.ingredients
+                        .where(
+                          (ing) => ing['amount'] != null && ing['amount'] != 1,
+                        )
+                        .toList();
 
                     return Card(
                       margin: EdgeInsets.only(left: 8, right: 8, bottom: 2),
@@ -130,6 +135,50 @@ class CartScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
+                            // INGREDIENTES (si hay)
+                            if (selectedIngredients.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                "Ingredientes personalizados:",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              ...selectedIngredients.map((ing) {
+                                String amountText = "Normal";
+                                if (ing['amount'] == 0) {
+                                  amountText = "No";
+                                } else if (ing['amount'] == 2) {
+                                  amountText = "Extra";
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 1.5,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Colors.grey[200],
+                                        child: Icon(
+                                          ing['icon'],
+                                          size: 16,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${ing['name']}: $amountText',
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
                             // ACOMPAÑAMIENTOS (si hay)
                             if (cartItem.accompaniments.any(
                               (acc) => acc['quantity'] > 0,
@@ -179,8 +228,7 @@ class CartScreen extends StatelessWidget {
                                         ],
                                       ),
                                     ),
-                                  )
-                                  .toList(),
+                                  ),
                             ],
                             // SUBTOTAL DE ESTE PEDIDO
                             const SizedBox(height: 5),
@@ -228,45 +276,160 @@ class CartScreen extends StatelessWidget {
                           "Total",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: 32,
                           ),
                         ),
                         Text(
                           "\$${state.subtotal.toStringAsFixed(2)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: 32,
                             color: Colors.orange,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 18),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<CartBloc>().add(ProccesCart());
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Tu pedido ha sido enviado '),
-                            duration: const Duration(seconds: 1),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Botón Cancelar
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                context.read<CartBloc>().add(ProccesCart());
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Pedido cancelado'),
+                                    duration: const Duration(seconds: 1),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                context.go("/products");
+                              },
+                              style:
+                                  ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.redAccent,
+                                    foregroundColor: Colors.white,
+                                    disabledBackgroundColor: Colors.redAccent
+                                        .withOpacity(0.6),
+                                    disabledForegroundColor: Colors.white
+                                        .withOpacity(0.6),
+                                    elevation: 3,
+                                    shadowColor: Colors.redAccent.withOpacity(
+                                      0.3,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(13),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 18,
+                                      horizontal: 16,
+                                    ),
+                                    minimumSize: const Size(0, 54),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ).copyWith(
+                                    overlayColor:
+                                        WidgetStateProperty.resolveWith<Color?>(
+                                          (Set<WidgetState> states) {
+                                            if (states.contains(
+                                              WidgetState.pressed,
+                                            )) {
+                                              return Colors.red.withOpacity(
+                                                0.3,
+                                              );
+                                            }
+                                            if (states.contains(
+                                              WidgetState.hovered,
+                                            )) {
+                                              return Colors.red.withOpacity(
+                                                0.1,
+                                              );
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                  ),
+                              child: const Text(
+                                "Cancelar Pedido",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                           ),
-                        );
-
-                        context.pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text(
-                        "Pagar Pedido",
-                        style: TextStyle(fontSize: 16),
-                      ),
+
+                        // Botón Pagar
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                context.push("/products/cart/payment/1578");
+                              },
+                              style:
+                                  ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
+                                    disabledBackgroundColor: Colors.black
+                                        .withOpacity(0.6),
+                                    disabledForegroundColor: Colors.white
+                                        .withOpacity(0.6),
+                                    elevation: 3,
+                                    shadowColor: Colors.black.withOpacity(0.3),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(13),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 18,
+                                      horizontal: 16,
+                                    ),
+                                    minimumSize: const Size(0, 54),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ).copyWith(
+                                    overlayColor:
+                                        WidgetStateProperty.resolveWith<Color?>(
+                                          (Set<WidgetState> states) {
+                                            if (states.contains(
+                                              WidgetState.pressed,
+                                            )) {
+                                              return Colors.grey.withOpacity(
+                                                0.3,
+                                              );
+                                            }
+                                            if (states.contains(
+                                              WidgetState.hovered,
+                                            )) {
+                                              return Colors.grey.withOpacity(
+                                                0.1,
+                                              );
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                  ),
+                              child: const Text(
+                                "Pagar Pedido",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

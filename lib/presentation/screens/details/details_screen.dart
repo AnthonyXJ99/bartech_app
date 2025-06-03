@@ -31,7 +31,7 @@ class DetailsView extends StatelessWidget {
 
     // Simula tus datos de grupos si no llegan como parámetro, ¡ajusta según tu flujo!
     final List<GroupItems> carruselImages = images;
-
+    bloc.add(GroupSelectedEvent(images[0]));
     return Scaffold(
       floatingActionButton: BlocBuilder<CartBloc, CartState>(
         builder: (context, state) {
@@ -39,7 +39,7 @@ class DetailsView extends StatelessWidget {
 
           return FloatingActionButton.extended(
             onPressed: () {
-              context.go("/products/cart");
+              context.push("/products/cart");
             },
             backgroundColor: Colors.orange.shade600,
             elevation: 8,
@@ -308,7 +308,7 @@ class DetailsView extends StatelessWidget {
 
 class _ProductCard extends StatefulWidget {
   final Products product;
-  const _ProductCard({Key? key, required this.product}) : super(key: key);
+  const _ProductCard({required this.product});
 
   @override
   State<_ProductCard> createState() => _ProductCardState();
@@ -468,10 +468,12 @@ class _ProductCardState extends State<_ProductCard> {
                                     );
 
                                     setState(() => isAdding = false);
+                                    // ignore: use_build_context_synchronously
                                     context.read<CartBloc>().add(
                                       AddToCart(CartItem(product: product)),
                                     );
                                     // Aquí puedes agregar lógica real de carrito
+                                    // ignore: use_build_context_synchronously
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -534,10 +536,10 @@ class CardImages extends StatelessWidget {
   final VoidCallback
   onTap; // Función que se ejecuta cuando se hace clic en la imagen
   const CardImages({
-    Key? key,
+    super.key,
     required this.carruselImages,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
