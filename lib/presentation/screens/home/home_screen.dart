@@ -1,4 +1,7 @@
+import 'package:bartech_app/presentation/bloc/Inactivity_bloc/inactivity_bloc.dart';
+import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -152,50 +155,63 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: height,
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: accent, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(21),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(14),
+    return BlocListener<InactivityBloc, InactivityState>(
+      listener: (context, state) {
+        print('Estado de inactividad: $state');
+        if (state is InactivityExpired) {
+          final currentRoute = GoRouterState.of(context).uri.toString();
+          if (currentRoute != '/') {
+            context.read<CartBloc>().add(ClearCart());
+            context.go('/');
+          }
+          context.read<InactivityBloc>().add(StopInactivityTimer());
+        }
+      },
+      child: Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: height,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: accent, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(21),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
                 ),
-                child: Image.asset(
-                  image,
-                  height: height * 0.68,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+              ],
+            ),
+            child: Column(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
+                  child: Image.asset(
+                    image,
+                    height: height * 0.68,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -147,7 +147,7 @@ class PaymentScreen extends StatelessWidget {
                                     ),
                                   ),
                                 );
-                                context.go("/products");
+                                context.go("/");
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: orange,

@@ -37,7 +37,11 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         emit(CartState(items: items));
       }
     });
+
     on<ProccesCart>((event, emit) {
+      emit(CartState(items: []));
+    });
+    on<ClearCart>((event, emit) {
       emit(CartState(items: []));
     });
   }

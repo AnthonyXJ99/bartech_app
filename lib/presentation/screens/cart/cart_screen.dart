@@ -308,20 +308,18 @@ class CartScreen extends StatelessWidget {
                                     behavior: SnackBarBehavior.floating,
                                   ),
                                 );
-                                context.go("/products");
+                                context.go("/");
                               },
                               style:
                                   ElevatedButton.styleFrom(
                                     backgroundColor: Colors.redAccent,
                                     foregroundColor: Colors.white,
                                     disabledBackgroundColor: Colors.redAccent
-                                        .withOpacity(0.6),
+                                        .withAlpha(153),
                                     disabledForegroundColor: Colors.white
-                                        .withOpacity(0.6),
+                                        .withAlpha(153),
                                     elevation: 3,
-                                    shadowColor: Colors.redAccent.withOpacity(
-                                      0.3,
-                                    ),
+                                    shadowColor: Colors.redAccent.withAlpha(76),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(13),
                                     ),
@@ -339,16 +337,12 @@ class CartScreen extends StatelessWidget {
                                             if (states.contains(
                                               WidgetState.pressed,
                                             )) {
-                                              return Colors.red.withOpacity(
-                                                0.3,
-                                              );
+                                              return Colors.red.withAlpha(76);
                                             }
                                             if (states.contains(
                                               WidgetState.hovered,
                                             )) {
-                                              return Colors.red.withOpacity(
-                                                0.1,
-                                              );
+                                              return Colors.red.withAlpha(76);
                                             }
                                             return null;
                                           },
@@ -380,11 +374,11 @@ class CartScreen extends StatelessWidget {
                                     backgroundColor: Colors.black,
                                     foregroundColor: Colors.white,
                                     disabledBackgroundColor: Colors.black
-                                        .withOpacity(0.6),
+                                        .withAlpha(153),
                                     disabledForegroundColor: Colors.white
-                                        .withOpacity(0.6),
+                                        .withAlpha(153),
                                     elevation: 3,
-                                    shadowColor: Colors.black.withOpacity(0.3),
+                                    shadowColor: Colors.black.withAlpha(76),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(13),
                                     ),
@@ -402,16 +396,12 @@ class CartScreen extends StatelessWidget {
                                             if (states.contains(
                                               WidgetState.pressed,
                                             )) {
-                                              return Colors.grey.withOpacity(
-                                                0.3,
-                                              );
+                                              return Colors.grey.withAlpha(76);
                                             }
                                             if (states.contains(
                                               WidgetState.hovered,
                                             )) {
-                                              return Colors.grey.withOpacity(
-                                                0.1,
-                                              );
+                                              return Colors.grey.withAlpha(76);
                                             }
                                             return null;
                                           },

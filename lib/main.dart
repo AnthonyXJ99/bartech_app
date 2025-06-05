@@ -1,5 +1,6 @@
 import 'package:bartech_app/config/router.dart';
 import 'package:bartech_app/config/theme.dart';
+import 'package:bartech_app/presentation/bloc/Inactivity_bloc/inactivity_bloc.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
 import 'package:bartech_app/presentation/bloc/payment_bloc/payment_bloc.dart';
@@ -20,8 +21,11 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => DetailsBloc()),
         BlocProvider(create: (_) => CartBloc()),
         BlocProvider(create: (_) => PaymentBloc()),
-        // Otros blocs globales si necesitas
+        BlocProvider(
+          create: (_) => InactivityBloc()..add(StartInactivityTimer(15)),
+        ),
       ],
+      // Sugerencia: pon el BlocListener en la home page, no aquí
       child: MaterialApp.router(
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
