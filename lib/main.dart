@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => CartBloc()),
         BlocProvider(create: (_) => PaymentBloc()),
         BlocProvider(
-          create: (_) => InactivityBloc()..add(StartInactivityTimer(15)),
+          create: (_) => InactivityBloc()..add(StartInactivityTimer(60)),
         ),
       ],
       // Sugerencia: pon el BlocListener en la home page, no aquí
