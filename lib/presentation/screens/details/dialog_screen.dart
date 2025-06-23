@@ -1,4 +1,5 @@
 import 'package:bartech_app/data/models/cart_item.dart';
+import 'package:bartech_app/data/models/product.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_customize_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
@@ -10,7 +11,7 @@ import 'package:go_router/go_router.dart';
 
 class DialogScreen extends StatelessWidget {
   const DialogScreen({super.key, required this.product});
-  final Products product;
+  final Product product;
 
   List<Map<String, dynamic>> get ingredients => [
     {"name": "Queso", "icon": Icons.egg_alt, "amount": 1},
@@ -62,7 +63,7 @@ class DialogScreen extends StatelessWidget {
 }
 
 class _DialogScreenContent extends StatelessWidget {
-  final Products product;
+  final Product product;
   const _DialogScreenContent({required this.product});
 
   @override
@@ -92,7 +93,7 @@ class _DialogScreenContent extends StatelessWidget {
 
               final double priceWithDiscount =
                   (product.price -
-                  (product.discount > 0 ? product.discount : 0));
+                  (product.discount! > 0 ? product.discount! : 0));
               double total =
                   priceWithDiscount * state.quantity + accompanimentsTotal;
 
@@ -120,11 +121,11 @@ class _DialogScreenContent extends StatelessWidget {
                       ),
                       // Imagen flotante
                       Hero(
-                        tag: product.image,
+                        tag: product.imageUrl!,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Image.asset(
-                            product.image,
+                            "assets/products/no_image.png",
                             width: 210,
                             height: 160,
                             fit: BoxFit.contain,
@@ -209,7 +210,7 @@ class _DialogScreenContent extends StatelessWidget {
 
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: product.discount > 0
+                        child: product.discount! > 0
                             ? Row(
                                 children: [
                                   Text(
@@ -223,7 +224,7 @@ class _DialogScreenContent extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 7),
                                   Text(
-                                    "\$${(product.price - product.discount).toStringAsFixed(2)}",
+                                    "\$${(product.price - product.discount!).toStringAsFixed(2)}",
                                     style: const TextStyle(
                                       color: Color(0xFFFBA63C),
                                       fontWeight: FontWeight.bold,
@@ -259,7 +260,7 @@ class _DialogScreenContent extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          product.description,
+                          product.description!,
                           style: const TextStyle(
                             color: Colors.black45,
                             fontSize: 14,

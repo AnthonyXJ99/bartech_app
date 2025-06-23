@@ -26,7 +26,9 @@ class CartScreen extends StatelessWidget {
                     final product = cartItem.product;
                     final priceWithDiscount =
                         product.price -
-                        (product.discount > 0 ? product.discount : 0);
+                        ((product.discount ?? 0) > 0
+                            ? (product.discount ?? 0)
+                            : 0);
 
                     double accompTotal = cartItem.accompaniments.fold(
                       0.0,
@@ -65,7 +67,10 @@ class CartScreen extends StatelessWidget {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
                                   child: Image.asset(
-                                    product.image,
+                                    // product.imageUrl ??
+                                    'assets/products/no_image.png',
+                                    // Aquí deberías usar la imagen del producto
+                                    // product.imageUrl,
                                     width: 52,
                                     height: 52,
                                     fit: BoxFit.contain,
@@ -95,7 +100,7 @@ class CartScreen extends StatelessWidget {
                                             ),
                                           ),
                                           const SizedBox(width: 12),
-                                          if (product.discount > 0)
+                                          if ((product.discount ?? 0) > 0)
                                             Text(
                                               "\$${product.price.toStringAsFixed(2)}",
                                               style: const TextStyle(
@@ -105,12 +110,12 @@ class CartScreen extends StatelessWidget {
                                                     TextDecoration.lineThrough,
                                               ),
                                             ),
-                                          if (product.discount > 0)
+                                          if (product.discount! > 0)
                                             const SizedBox(width: 5),
                                           Text(
                                             "\$${priceWithDiscount.toStringAsFixed(2)}",
                                             style: TextStyle(
-                                              color: product.discount > 0
+                                              color: (product.discount ?? 0) > 0
                                                   ? Color(0xFFFBA63C)
                                                   : Colors.black87,
                                               fontWeight: FontWeight.bold,

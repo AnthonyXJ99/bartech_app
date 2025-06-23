@@ -1,10 +1,12 @@
 import 'package:bartech_app/data/models/cart_item.dart';
 import 'package:bartech_app/data/models/model_groups.dart';
 import 'package:bartech_app/data/models/model_products.dart';
+import 'package:bartech_app/data/models/product.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_state.dart';
+import 'package:bartech_app/presentation/screens/details/component/card_categories.dart';
 import 'package:bartech_app/presentation/screens/details/dialog_screen.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
@@ -30,8 +32,8 @@ class DetailsView extends StatelessWidget {
     final bloc = context.read<DetailsBloc>();
 
     // Simula tus datos de grupos si no llegan como parámetro, ¡ajusta según tu flujo!
-    final List<GroupItems> carruselImages = images;
-    bloc.add(GroupSelectedEvent(images[0]));
+    // final List<GroupItems> carruselImages = images;
+    // bloc.add(GroupSelectedEvent(images[0]));
     return Scaffold(
       floatingActionButton: BlocBuilder<CartBloc, CartState>(
         builder: (context, state) {
@@ -134,22 +136,11 @@ class DetailsView extends StatelessWidget {
                     height: 40,
                     fit: BoxFit.cover,
                   ),
-                  // const Spacer(),
-                  // ElevatedButton(
-                  //   onPressed: () {},
-                  //   style: ElevatedButton.styleFrom(
-                  //     foregroundColor: Colors.white,
-                  //     backgroundColor: Colors.green,
-                  //     side: const BorderSide(color: Colors.green, width: 2),
-                  //     shape: RoundedRectangleBorder(
-                  //       borderRadius: BorderRadius.circular(8),
-                  //     ),
-                  //   ),
-                  //   child: const Text('Cupón'),
-                  // ),
+
                   const SizedBox(width: 10),
                   Text(
-                    state.selectedRecipeName,
+                    state.selectedCategory?.categoryItemName ??
+                        "Selecciona una categoría",
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -166,47 +157,54 @@ class DetailsView extends StatelessWidget {
             child: Row(
               children: [
                 // Lado izquierdo: carrusel vertical de grupos
-                Container(
-                  width: MediaQuery.of(context).size.width * 0.25,
-                  color: Colors.white,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Limita el alto máximo del carrusel para evitar overflow
-                      final maxCarouselHeight =
-                          constraints.maxHeight -
-                          10; // margen superior/inferior
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        child: CarouselSlider.builder(
-                          itemCount: carruselImages.length,
-                          itemBuilder: (context, index, realIndex) {
-                            final carruselImage = carruselImages[index];
-                            return CardImages(
-                              carruselImages: carruselImage,
-                              onTap: () {
-                                bloc.add(GroupSelectedEvent(carruselImage));
+
+                // En lugar de pasar "images" por parámetro, ¡usa BlocBuilder!
+                BlocBuilder<DetailsBloc, DetailsState>(
+                  builder: (context, state) {
+                    final categories = state.categories;
+                    if (categories.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return Container(
+                      width: MediaQuery.of(context).size.width * 0.25,
+                      color: Colors.white,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxCarouselHeight = constraints.maxHeight - 10;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: CarouselSlider.builder(
+                              itemCount: categories.length,
+                              itemBuilder: (context, index, realIndex) {
+                                final category = categories[index];
+                                return CardCategory(
+                                  // renombra tu CardImages o haz uno nuevo
+                                  category: category,
+                                  onTap: () {
+                                    // Aquí podrías hacer un evento para filtrar productos de la categoría
+                                    bloc.add(CategorySelectedEvent(category));
+                                  },
+                                );
                               },
-                            );
-                          },
-                          options: CarouselOptions(
-                            height: maxCarouselHeight > 0
-                                ? maxCarouselHeight
-                                : 200,
-                            autoPlay: true,
-                            autoPlayCurve: Curves.easeInCubic,
-                            enlargeCenterPage: true,
-                            autoPlayInterval: const Duration(seconds: 3),
-                            scrollDirection: Axis.vertical,
-                            viewportFraction:
-                                0.33, // Ajusta para que no se solapen
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                              options: CarouselOptions(
+                                height: maxCarouselHeight > 0
+                                    ? maxCarouselHeight
+                                    : 200,
+                                autoPlay: false,
+                                enlargeCenterPage: true,
+                                scrollDirection: Axis.vertical,
+                                viewportFraction: 0.33,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
 
                 // Lado derecho: grilla de productos
+                // Lado derecho: grilla de productos filtrados por categoría seleccionada
                 Expanded(
                   child: Container(
                     color: const Color(0xFFF9F9F9),
@@ -229,7 +227,7 @@ class DetailsView extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'Selecciona una receta para ver los productos.',
+                                  'Selecciona una categoría para ver los productos.',
                                   style: TextStyle(
                                     fontSize: 18,
                                     color: Colors.black54,
@@ -241,6 +239,7 @@ class DetailsView extends StatelessWidget {
                           );
                         }
 
+                        // Muestra productos en grilla
                         return LayoutBuilder(
                           builder: (context, constraints) {
                             int crossAxisCount = constraints.maxWidth > 1100
@@ -271,7 +270,6 @@ class DetailsView extends StatelessWidget {
                               itemCount: products.length,
                               itemBuilder: (context, index) {
                                 final product = products[index];
-                                // Animación de aparición
                                 return TweenAnimationBuilder<double>(
                                   tween: Tween(begin: 0, end: 1),
                                   duration: Duration(
@@ -307,7 +305,7 @@ class DetailsView extends StatelessWidget {
 }
 
 class _ProductCard extends StatefulWidget {
-  final Products product;
+  final Product product;
   const _ProductCard({required this.product});
 
   @override
@@ -365,7 +363,11 @@ class _ProductCardState extends State<_ProductCard> {
                       width: imageSize,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(product.image, fit: BoxFit.contain),
+                        child: Image.asset(
+                          "assets/products/no_image.png", //TODO: Cambiar por la imagen del producto
+                          // product.imageUrl ?? "assets/products/no_image.png",
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),
@@ -414,12 +416,12 @@ class _ProductCardState extends State<_ProductCard> {
                     children: [
                       // Si hay descuento, mostramos el precio original tachado y el precio con descuento
                       Flexible(
-                        child: product.discount > 0
+                        child: (product.discount ?? 0) > 0
                             ? Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    "\$${product.price.toStringAsFixed(2)}",
+                                    "\$${(product.price).toStringAsFixed(0)}",
                                     style: TextStyle(
                                       fontSize: fontPrice - 4,
                                       color: Colors.grey,
@@ -429,7 +431,7 @@ class _ProductCardState extends State<_ProductCard> {
                                   ),
                                   SizedBox(width: 6),
                                   Text(
-                                    "\$${(product.price - product.discount).toStringAsFixed(2)}",
+                                    "\$${(product.price - (product.discount ?? 0)).toStringAsFixed(0)}",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: fontPrice,

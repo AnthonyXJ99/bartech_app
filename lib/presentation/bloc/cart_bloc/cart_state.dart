@@ -8,7 +8,7 @@ class CartState {
   double get subtotal => items.fold(0.0, (sum, item) {
     final basePrice =
         (item.product.price -
-        (item.product.discount > 0 ? item.product.discount : 0));
+        (item.product.discount! > 0 ? item.product.discount! : 0));
     final accompanimentsTotal = item.accompaniments.fold<double>(
       0.0,
       (acc, accItem) =>

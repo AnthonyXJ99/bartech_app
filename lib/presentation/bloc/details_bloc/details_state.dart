@@ -1,26 +1,44 @@
+import 'package:bartech_app/data/models/product.dart';
 import 'package:equatable/equatable.dart';
-import 'package:bartech_app/data/models/model_products.dart';
+import 'package:bartech_app/data/models/product_category.dart';
 
 class DetailsState extends Equatable {
-  final String selectedRecipeName;
-  final List<Products> products;
+  final List<Product> products;
+  final List<ProductCategory> categories; // <-- NUEVO
+  final ProductCategory? selectedCategory;
+  final bool isLoading;
+  final String error;
 
   const DetailsState({
-    required this.selectedRecipeName,
-    required this.products,
+    this.categories = const [],
+    this.selectedCategory,
+    this.products = const [],
+    this.isLoading = false,
+    this.error = '',
   });
 
-  factory DetailsState.initial() =>
-      const DetailsState(selectedRecipeName: 'Home', products: []);
-
   DetailsState copyWith({
-    String? selectedRecipeName,
-    List<Products>? products,
-  }) => DetailsState(
-    selectedRecipeName: selectedRecipeName ?? this.selectedRecipeName,
-    products: products ?? this.products,
-  );
+    List<ProductCategory>? categories,
+    ProductCategory? selectedCategory,
+    List<Product>? products,
+    bool? isLoading,
+    String? error,
+  }) {
+    return DetailsState(
+      categories: categories ?? this.categories,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
+      products: products ?? this.products,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? '',
+    );
+  }
 
   @override
-  List<Object?> get props => [selectedRecipeName, products];
+  List<Object?> get props => [
+    categories,
+    selectedCategory,
+    products,
+    isLoading,
+    error,
+  ];
 }

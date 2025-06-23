@@ -1,15 +1,20 @@
+import 'package:bartech_app/data/models/product_category.dart';
 import 'package:equatable/equatable.dart';
-import 'package:bartech_app/data/models/model_groups.dart';
 
+// Base
 abstract class DetailsEvent extends Equatable {
   @override
   List<Object?> get props => [];
 }
 
-class GroupSelectedEvent extends DetailsEvent {
-  final GroupItems group;
-  GroupSelectedEvent(this.group);
+// Para cargar categorías desde la API
+class LoadCategoriesEvent extends DetailsEvent {}
+
+// Cuando una categoría/grupo es seleccionada
+class CategorySelectedEvent extends DetailsEvent {
+  final ProductCategory category;
+  CategorySelectedEvent(this.category);
 
   @override
-  List<Object?> get props => [group];
+  List<Object?> get props => [category];
 }

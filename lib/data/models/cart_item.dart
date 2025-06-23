@@ -1,7 +1,7 @@
-import 'package:bartech_app/data/models/model_products.dart';
+import 'package:bartech_app/data/models/product.dart';
 
 class CartItem {
-  final Products product;
+  final Product product;
   int quantity;
   final List<Map<String, dynamic>> accompaniments; // o List<AccompanimentModel>
   final List<Map<String, dynamic>> ingredients;
