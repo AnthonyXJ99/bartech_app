@@ -1,6 +1,5 @@
 import 'package:bartech_app/data/models/cart_item.dart';
 import 'package:bartech_app/data/models/model_groups.dart';
-import 'package:bartech_app/data/models/model_products.dart';
 import 'package:bartech_app/data/models/product.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
@@ -392,7 +391,7 @@ class _ProductCardState extends State<_ProductCard> {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        "24min",
+                        "${product.waitingTime ?? "0"}min", //"24min"
                         style: TextStyle(
                           fontSize: iconSize - 1,
                           color: Colors.grey[700],
@@ -401,7 +400,7 @@ class _ProductCardState extends State<_ProductCard> {
                       SizedBox(width: 8),
                       Icon(Icons.star, color: Colors.amber, size: iconSize),
                       Text(
-                        "4.8",
+                        product.rating?.toStringAsFixed(1) ?? "0.0",
                         style: TextStyle(
                           fontSize: iconSize - 1,
                           color: Colors.grey[700],
@@ -441,7 +440,7 @@ class _ProductCardState extends State<_ProductCard> {
                                 ],
                               )
                             : Text(
-                                "\$${product.price.toStringAsFixed(2)}",
+                                "\$${product.price.toStringAsFixed(0)}",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: fontPrice,

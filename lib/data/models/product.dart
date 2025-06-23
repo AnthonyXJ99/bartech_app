@@ -88,7 +88,7 @@ class Product {
   final String? groupItemCode;
   final String? categoryItemCode;
   final String? waitingTime;
-  final int? rating;
+  final double? rating;
   final List<ProductMaterial>? material;
   final List<ProductAccompaniment>? accompaniment;
 
