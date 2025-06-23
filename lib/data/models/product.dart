@@ -87,6 +87,8 @@ class Product {
   final String? sellItem;
   final String? groupItemCode;
   final String? categoryItemCode;
+  final String? waitingTime;
+  final String? rating;
   final List<ProductMaterial>? material;
   final List<ProductAccompaniment>? accompaniment;
 
@@ -105,6 +107,8 @@ class Product {
     this.sellItem,
     this.groupItemCode,
     this.categoryItemCode,
+    this.waitingTime,
+    this.rating,
     this.material,
     this.accompaniment,
   });
@@ -124,6 +128,8 @@ class Product {
     sellItem: json['sellItem'],
     groupItemCode: json['groupItemCode'],
     categoryItemCode: json['categoryItemCode'],
+    waitingTime: json['waitingTime'],
+    rating: json['rating'],
     material: (json['material'] as List?)
         ?.map((e) => ProductMaterial.fromJson(e))
         .toList(),
@@ -146,6 +152,8 @@ class Product {
     'frgnDescription': frgnDescription,
     'sellItem': sellItem,
     'groupItemCode': groupItemCode,
+    'waitingTime': waitingTime,
+    'rating': rating,
     'categoryItemCode': categoryItemCode,
     'material': material?.map((e) => e.toJson()).toList(),
     'accompaniment': accompaniment?.map((e) => e.toJson()).toList(),

@@ -23,7 +23,7 @@ void main() {
         Provider<Dio>(
           create: (_) => Dio(
             BaseOptions(
-              baseUrl: 'http://192.168.18.43:5023/',
+              baseUrl: 'https://3bde-38-250-152-113.ngrok-free.app/',
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
             ),
