@@ -5,7 +5,6 @@ import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_cus
 import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
 import 'package:bartech_app/presentation/screens/details/component/ingredient_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:bartech_app/data/models/model_products.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -93,7 +92,7 @@ class _DialogScreenContent extends StatelessWidget {
 
               final double priceWithDiscount =
                   (product.price -
-                  (product.discount! > 0 ? product.discount! : 0));
+                  ((product.discount ?? 0) > 0 ? (product.discount ?? 0) : 0));
               double total =
                   priceWithDiscount * state.quantity + accompanimentsTotal;
 
@@ -149,7 +148,7 @@ class _DialogScreenContent extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
-                                      "4.8",
+                                      "${product.rating ?? 0}",
                                       style: TextStyle(
                                         color: Colors.orange[700],
                                         fontWeight: FontWeight.w600,
@@ -214,7 +213,7 @@ class _DialogScreenContent extends StatelessWidget {
                             ? Row(
                                 children: [
                                   Text(
-                                    "\$${product.price.toStringAsFixed(2)}",
+                                    "\$${product.price.toStringAsFixed(0)}",
                                     style: const TextStyle(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w600,
@@ -224,7 +223,7 @@ class _DialogScreenContent extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 7),
                                   Text(
-                                    "\$${(product.price - product.discount!).toStringAsFixed(2)}",
+                                    "\$${(product.price - product.discount!).toStringAsFixed(0)}",
                                     style: const TextStyle(
                                       color: Color(0xFFFBA63C),
                                       fontWeight: FontWeight.bold,
@@ -234,7 +233,7 @@ class _DialogScreenContent extends StatelessWidget {
                                 ],
                               )
                             : Text(
-                                "\$${product.price.toStringAsFixed(2)}",
+                                "\$${product.price.toStringAsFixed(0)}",
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 18,
@@ -260,7 +259,7 @@ class _DialogScreenContent extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          product.description!,
+                          product.description.toString(),
                           style: const TextStyle(
                             color: Colors.black45,
                             fontSize: 14,
@@ -354,7 +353,7 @@ class _DialogScreenContent extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            "\$${total.toStringAsFixed(2)}",
+                            "\$${total.toStringAsFixed(0)}",
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 23,

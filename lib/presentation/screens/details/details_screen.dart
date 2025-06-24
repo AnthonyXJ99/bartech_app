@@ -391,7 +391,7 @@ class _ProductCardState extends State<_ProductCard> {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        "${product.waitingTime ?? "0"}min", //"24min"
+                        "${product.waitingTime ?? "0"} min", //"24min"
                         style: TextStyle(
                           fontSize: iconSize - 1,
                           color: Colors.grey[700],
