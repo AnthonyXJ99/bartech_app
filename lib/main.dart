@@ -1,5 +1,8 @@
 import 'package:bartech_app/config/router.dart';
 import 'package:bartech_app/config/theme.dart';
+import 'package:bartech_app/data/models/local/product_accompaniment_isar.dart';
+import 'package:bartech_app/data/models/local/product_isar.dart';
+import 'package:bartech_app/data/models/local/product_material_isar.dart';
 import 'package:bartech_app/data/repository/product_categories_repository.dart';
 import 'package:bartech_app/data/repository/product_groups_repository.dart';
 import 'package:bartech_app/data/repository/products_repository.dart';
@@ -14,9 +17,21 @@ import 'package:bartech_app/presentation/bloc/payment_bloc/payment_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final dir = await getApplicationDocumentsDirectory();
+
+  final isar = await Isar.open([
+    ProductIsarSchema,
+    ProductMaterialISarSchema,
+    ProductAccompanimentIsarSchema,
+  ], directory: dir.path);
+
   runApp(
     MultiProvider(
       providers: [
@@ -29,6 +44,9 @@ void main() {
             ),
           ),
         ),
+        //Isar
+        Provider<Isar>.value(value: isar),
+
         Provider<ProductsService>(
           create: (context) => ProductsService(context.read<Dio>()),
         ),

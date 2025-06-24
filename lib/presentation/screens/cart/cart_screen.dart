@@ -13,7 +13,7 @@ class CartScreen extends StatelessWidget {
       body: BlocBuilder<CartBloc, CartState>(
         builder: (context, state) {
           if (state.items.isEmpty) {
-            return const Center(child: Text("No items in cart"));
+            return const Center(child: Text("No hay productos en el pedido"));
           }
 
           return Column(
