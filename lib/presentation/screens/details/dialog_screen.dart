@@ -4,6 +4,7 @@ import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_customize_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
 import 'package:bartech_app/presentation/screens/details/component/ingredient_selector.dart';
+import 'package:bartech_app/presentation/screens/util/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -65,6 +66,49 @@ class _DialogScreenContent extends StatelessWidget {
   final Product product;
   const _DialogScreenContent({required this.product});
 
+  Widget _buildProductImage(String? imageUrl) {
+    final validatedUrl = validateImageUrl(imageUrl);
+
+    if (validatedUrl != null) {
+      return Image.network(
+        validatedUrl,
+        width: 210,
+        height: 160,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            "assets/products/no_image.png",
+            width: 210,
+            height: 160,
+            fit: BoxFit.contain,
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 210,
+            height: 160,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        "assets/products/no_image.png",
+        width: 210,
+        height: 160,
+        fit: BoxFit.contain,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -120,15 +164,10 @@ class _DialogScreenContent extends StatelessWidget {
                       ),
                       // Imagen flotante
                       Hero(
-                        tag: product.imageUrl!,
+                        tag: product.imageUrl ?? "product_image",
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Image.asset(
-                            "assets/products/no_image.png",
-                            width: 210,
-                            height: 160,
-                            fit: BoxFit.contain,
-                          ),
+                          child: _buildProductImage(product.imageUrl),
                         ),
                       ),
                       const SizedBox(height: 12),

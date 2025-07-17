@@ -1,10 +1,54 @@
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
+import 'package:bartech_app/presentation/screens/util/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
+
+  Widget _buildProductImage(String? imageUrl) {
+    final validatedUrl = validateImageUrl(imageUrl);
+    
+    if (validatedUrl != null) {
+      return Image.network(
+        validatedUrl,
+        width: 52,
+        height: 52,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            "assets/products/no_image.png",
+            width: 52,
+            height: 52,
+            fit: BoxFit.contain,
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 52,
+            height: 52,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / 
+                      loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        "assets/products/no_image.png",
+        width: 52,
+        height: 52,
+        fit: BoxFit.contain,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,15 +110,7 @@ class CartScreen extends StatelessWidget {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: Image.asset(
-                                    // product.imageUrl ??
-                                    'assets/products/no_image.png',
-                                    // Aquí deberías usar la imagen del producto
-                                    // product.imageUrl,
-                                    width: 52,
-                                    height: 52,
-                                    fit: BoxFit.contain,
-                                  ),
+                                  child: _buildProductImage(product.imageUrl),
                                 ),
                                 const SizedBox(width: 13),
                                 Expanded(

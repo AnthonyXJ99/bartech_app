@@ -8,32 +8,35 @@ class CardCategory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 300,
-      child: Column(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              onTap: onTap,
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      onTap: onTap,
+      child: SizedBox(
+        width: 300,
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
               child: category.imageUrl != null
                   ? Image.network(category.imageUrl!, fit: BoxFit.cover)
-                  : Placeholder(fallbackHeight: 80), // Puedes cambiar esto
+                  : Placeholder(fallbackHeight: 80),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              category.categoryItemName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                category.categoryItemName,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

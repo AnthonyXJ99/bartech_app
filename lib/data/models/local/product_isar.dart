@@ -56,4 +56,49 @@ class ProductIsar {
   }
 
   // Puedes agregar toMap y fromMap si lo necesitas
+
+  Product toProduct() {
+    return Product(
+      itemCode: itemCode,
+      itemName: itemName,
+      price: price,
+      available: available,
+      enabled: enabled,
+      eanCode: eanCode,
+      frgnName: frgnName,
+      discount: discount,
+      imageUrl: imageUrl,
+      description: description,
+      frgnDescription: frgnDescription,
+      sellItem: sellItem,
+      groupItemCode: groupItemCode,
+      categoryItemCode: categoryItemCode,
+      waitingTime: waitingTime,
+      rating: rating,
+      material: material
+          .map(
+            (m) => ProductMaterial(
+              itemCode: m.itemCode,
+              itemName: m.itemName,
+              quantity: m.quantity,
+              imageUrl: m.imageUrl,
+              isPrimary: m.isPrimary,
+              productItemCode: m.productItemCode,
+            ),
+          )
+          .toList(),
+      accompaniment: accompaniment
+          .map(
+            (a) => ProductAccompaniment(
+              itemCode: a.itemCode,
+              itemName: a.itemName,
+              priceOld: a.priceOld,
+              price: a.price,
+              imageUrl: a.imageUrl,
+              productItemCode: a.productItemCode,
+            ),
+          )
+          .toList(),
+    );
+  }
 }

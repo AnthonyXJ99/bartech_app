@@ -3,8 +3,11 @@ import 'package:bartech_app/config/theme.dart';
 import 'package:bartech_app/data/models/local/product_accompaniment_isar.dart';
 import 'package:bartech_app/data/models/local/product_isar.dart';
 import 'package:bartech_app/data/models/local/product_material_isar.dart';
+import 'package:bartech_app/data/models/local/product_category_isar.dart';
+import 'package:bartech_app/data/repository/local/product_category_isar_reporitory.dart';
 import 'package:bartech_app/data/repository/product_categories_repository.dart';
 import 'package:bartech_app/data/repository/product_groups_repository.dart';
+import 'package:bartech_app/data/repository/products_isar_repository.dart';
 import 'package:bartech_app/data/repository/products_repository.dart';
 import 'package:bartech_app/data/services/product_categories_service.dart';
 import 'package:bartech_app/data/services/product_groups_service.dart';
@@ -14,6 +17,7 @@ import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
 import 'package:bartech_app/presentation/bloc/payment_bloc/payment_bloc.dart';
+import 'package:bartech_app/presentation/bloc/sync-bloc/sync_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,6 +34,7 @@ void main() async {
     ProductIsarSchema,
     ProductMaterialISarSchema,
     ProductAccompanimentIsarSchema,
+    ProductCategoryIsarSchema,
   ], directory: dir.path);
 
   runApp(
@@ -38,7 +43,7 @@ void main() async {
         Provider<Dio>(
           create: (_) => Dio(
             BaseOptions(
-              baseUrl: 'http://192.168.20.253:5023/',
+              baseUrl: 'http://192.168.18.43:5023/',
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
             ),
@@ -69,14 +74,31 @@ void main() async {
           create: (context) =>
               ProductGroupsRepository(context.read<ProductGroupsService>()),
         ),
+        Provider<ProductsIsarRepository>(
+          create: (context) => ProductsIsarRepository(context.read<Isar>()),
+        ),
+        Provider<ProductCategoryIsarRepository>(
+          create: (context) =>
+              ProductCategoryIsarRepository(context.read<Isar>()),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => DetailsBloc(
-              categoryRepository: context.read<ProductCategoriesRepository>(),
+            create: (context) => SyncBloc(
               productsRepository: context.read<ProductsRepository>(),
-            )..add(LoadCategoriesEvent()),
+              productsIsarRepository: context.read<ProductsIsarRepository>(),
+              productCategoriesRepository: context
+                  .read<ProductCategoriesRepository>(),
+              productCategoryIsarRepository: context
+                  .read<ProductCategoryIsarRepository>(),
+            )..add(SyncAllEvent()),
+          ),
+          BlocProvider(
+            create: (context) => DetailsBloc(
+              categoryRepository: context.read<ProductCategoryIsarRepository>(),
+              productsIsarRepository: context.read<ProductsIsarRepository>(),
+            ),
           ),
           BlocProvider(create: (_) => CartBloc()),
           BlocProvider(create: (_) => PaymentBloc()),
@@ -100,6 +122,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: fastFoodTheme,
+      builder: (context, child) {
+        return BlocListener<SyncBloc, SyncState>(
+          listener: (context, state) {
+            if (state is SyncSuccess) {
+              // Cuando la sincronización es exitosa, cargar las categorías
+              context.read<DetailsBloc>().add(LoadCategoriesEvent());
+            }
+          },
+          child: child!,
+        );
+      },
     );
   }
 }

@@ -10,6 +10,9 @@ abstract class DetailsEvent extends Equatable {
 // Para cargar categorías desde la API
 class LoadCategoriesEvent extends DetailsEvent {}
 
+// Para cargar categorías después de la sincronización
+class LoadCategoriesAfterSyncEvent extends DetailsEvent {}
+
 // Cuando una categoría/grupo es seleccionada
 class CategorySelectedEvent extends DetailsEvent {
   final ProductCategory category;

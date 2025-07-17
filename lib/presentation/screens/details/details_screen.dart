@@ -7,6 +7,7 @@ import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_state.dart';
 import 'package:bartech_app/presentation/screens/details/component/card_categories.dart';
 import 'package:bartech_app/presentation/screens/details/dialog_screen.dart';
+import 'package:bartech_app/presentation/screens/util/util.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -157,13 +158,62 @@ class DetailsView extends StatelessWidget {
               children: [
                 // Lado izquierdo: carrusel vertical de grupos
 
-                // En lugar de pasar "images" por parámetro, ¡usa BlocBuilder!
+                // En lugar de pasarimages por parámetro, ¡usa BlocBuilder!
                 BlocBuilder<DetailsBloc, DetailsState>(
                   builder: (context, state) {
+                    // Manejar estado de carga
+                    if (state.isLoading && state.categories.isEmpty) {
+                      return Container(
+                        width: MediaQuery.of(context).size.width * 0.25,
+                        color: Colors.white,
+                        child: const Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    // Manejar estado de error
+                    if (state.error.isNotEmpty && state.categories.isEmpty) {
+                      return Container(
+                        width: MediaQuery.of(context).size.width * 0.25,
+                        color: Colors.white,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red[400],
+                                size: 32,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Error al cargar categorías',
+                                style: TextStyle(
+                                  color: Colors.red[400],
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
                     final categories = state.categories;
                     if (categories.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
+                      return Container(
+                        width: MediaQuery.of(context).size.width * 0.25,
+                        color: Colors.white,
+                        child: const Center(
+                          child: Text(
+                            'No hay categorías disponibles',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
                     }
+
                     return Container(
                       width: MediaQuery.of(context).size.width * 0.25,
                       color: Colors.white,
@@ -177,10 +227,8 @@ class DetailsView extends StatelessWidget {
                               itemBuilder: (context, index, realIndex) {
                                 final category = categories[index];
                                 return CardCategory(
-                                  // renombra tu CardImages o haz uno nuevo
                                   category: category,
                                   onTap: () {
-                                    // Aquí podrías hacer un evento para filtrar productos de la categoría
                                     bloc.add(CategorySelectedEvent(category));
                                   },
                                 );
@@ -314,6 +362,36 @@ class _ProductCard extends StatefulWidget {
 class _ProductCardState extends State<_ProductCard> {
   bool isAdding = false;
 
+  Widget _buildProductImage(String? imageUrl) {
+    final validatedUrl = validateImageUrl(imageUrl);
+
+    if (validatedUrl != null) {
+      return Image.network(
+        validatedUrl,
+        fit: BoxFit.fill,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            "assets/products/no_image.png",
+            fit: BoxFit.contain,
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+      );
+    } else {
+      return Image.asset("assets/products/no_image.png", fit: BoxFit.contain);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -362,11 +440,7 @@ class _ProductCardState extends State<_ProductCard> {
                       width: imageSize,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          "assets/products/no_image.png", //TODO: Cambiar por la imagen del producto
-                          // product.imageUrl ?? "assets/products/no_image.png",
-                          fit: BoxFit.contain,
-                        ),
+                        child: _buildProductImage(product.imageUrl),
                       ),
                     ),
                   ),
