@@ -5,6 +5,7 @@ import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_state.dart';
+import 'package:bartech_app/presentation/bloc/image_bloc/image_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/card_categories.dart';
 import 'package:bartech_app/presentation/screens/details/dialog_screen.dart';
 import 'package:bartech_app/presentation/screens/util/util.dart';
@@ -12,6 +13,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key, required this.carruselImages});
@@ -23,9 +25,36 @@ class DetailsScreen extends StatelessWidget {
   }
 }
 
-class DetailsView extends StatelessWidget {
+class DetailsView extends StatefulWidget {
   const DetailsView({super.key, required this.images});
   final List<GroupItems> images;
+
+  @override
+  State<DetailsView> createState() => _DetailsViewState();
+}
+
+class _DetailsViewState extends State<DetailsView> {
+  ImageBloc? _imageBloc;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _imageBloc = context.read<ImageBloc>();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar imágenes de publicidad
+    context.read<ImageBloc>().add(const LoadImagesEvent(type: "Banner"));
+  }
+
+  @override
+  void dispose() {
+    // Limpiar imágenes de publicidad al salir
+    _imageBloc?.add(const ClearImagesEvent(type: "Banner"));
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,23 +131,78 @@ class DetailsView extends StatelessWidget {
       body: Column(
         children: [
           // Carrusel superior de imágenes
-          CarouselSlider(
-            items: [
-              Image.asset('assets/slider/1.jpeg', fit: BoxFit.cover),
-              Image.asset('assets/slider/2.jpeg', fit: BoxFit.cover),
-              Image.asset('assets/slider/3.jpeg', fit: BoxFit.cover),
-              Image.asset('assets/slider/4.jpeg', fit: BoxFit.cover),
-            ],
-            options: CarouselOptions(
-              height: MediaQuery.of(context).size.height * 0.20,
-              autoPlay: true,
-              autoPlayCurve: Curves.easeInCubic,
-              enlargeCenterPage: true,
-              autoPlayInterval: const Duration(seconds: 3),
-              scrollDirection: Axis.horizontal,
-              viewportFraction: 1.0,
-              disableCenter: true,
-            ),
+          BlocBuilder<ImageBloc, ImageState>(
+            builder: (context, state) {
+              if (state is ImageLoaded) {
+                final publicidadImages = state.getImagesByType("Banner");
+                if (publicidadImages.isNotEmpty) {
+                  return CarouselSlider(
+                    items: publicidadImages.map((image) {
+                      return Image.network(
+                        image.publicUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }).toList(),
+                    options: CarouselOptions(
+                      height: MediaQuery.of(context).size.height * 0.20,
+                      autoPlay: true,
+                      autoPlayCurve: Curves.easeInCubic,
+                      enlargeCenterPage: true,
+                      autoPlayInterval: const Duration(seconds: 3),
+                      scrollDirection: Axis.horizontal,
+                      viewportFraction: 1.0,
+                      disableCenter: true,
+                    ),
+                  );
+                }
+              } else if (state is ImageLoading && state.type == "Banner") {
+                return Container(
+                  height: MediaQuery.of(context).size.height * 0.20,
+                  color: Colors.grey[300],
+                  child: const Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              // Fallback a imágenes locales si no hay datos o hay error
+              return CarouselSlider(
+                items: [
+                  Image.asset('assets/slider/1.jpeg', fit: BoxFit.cover),
+                  Image.asset('assets/slider/2.jpeg', fit: BoxFit.cover),
+                  Image.asset('assets/slider/3.jpeg', fit: BoxFit.cover),
+                  Image.asset('assets/slider/4.jpeg', fit: BoxFit.cover),
+                ],
+                options: CarouselOptions(
+                  height: MediaQuery.of(context).size.height * 0.20,
+                  autoPlay: true,
+                  autoPlayCurve: Curves.easeInCubic,
+                  enlargeCenterPage: true,
+                  autoPlayInterval: const Duration(seconds: 3),
+                  scrollDirection: Axis.horizontal,
+                  viewportFraction: 1.0,
+                  disableCenter: true,
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 5),
@@ -298,6 +382,10 @@ class DetailsView extends StatelessWidget {
                                 : 1;
 
                             return GridView.builder(
+                              key: ValueKey(
+                                state.selectedCategory?.categoryItemCode ??
+                                    'no-category',
+                              ),
                               padding: const EdgeInsets.only(bottom: 12),
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
@@ -332,7 +420,12 @@ class DetailsView extends StatelessWidget {
                                       ),
                                     );
                                   },
-                                  child: _ProductCard(product: product),
+                                  child: _ProductCard(
+                                    key: ValueKey(
+                                      '${state.selectedCategory?.categoryItemCode}-${product.itemCode}',
+                                    ),
+                                    product: product,
+                                  ),
                                 );
                               },
                             );
@@ -353,7 +446,7 @@ class DetailsView extends StatelessWidget {
 
 class _ProductCard extends StatefulWidget {
   final Product product;
-  const _ProductCard({required this.product});
+  const _ProductCard({super.key, required this.product});
 
   @override
   State<_ProductCard> createState() => _ProductCardState();
@@ -369,21 +462,17 @@ class _ProductCardState extends State<_ProductCard> {
       return Image.network(
         validatedUrl,
         fit: BoxFit.fill,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
         errorBuilder: (context, error, stackTrace) {
           return Image.asset(
             "assets/products/no_image.png",
             fit: BoxFit.contain,
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
           );
         },
       );

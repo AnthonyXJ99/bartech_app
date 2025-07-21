@@ -1,16 +1,44 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:bartech_app/presentation/bloc/image_bloc/image_bloc.dart';
 
-class WelcomeScreen extends StatelessWidget {
-  WelcomeScreen({super.key});
+class WelcomeScreen extends StatefulWidget {
+  const WelcomeScreen({super.key});
 
-  final List<String> images = [
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final List<String> fallbackImages = [
     'assets/slider/1.jpeg',
     'assets/slider/2.jpeg',
     'assets/slider/3.jpeg',
     'assets/slider/4.jpeg',
   ];
+  ImageBloc? _imageBloc;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _imageBloc = context.read<ImageBloc>();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar imágenes de publicidad
+    context.read<ImageBloc>().add(const LoadImagesEvent(type: "Publicidad"));
+  }
+
+  @override
+  void dispose() {
+    // Limpiar imágenes de publicidad al salir
+    _imageBloc?.add(const ClearImagesEvent(type: "Publicidad"));
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,44 +51,110 @@ class WelcomeScreen extends StatelessWidget {
         child: Stack(
           children: [
             // Carrusel de imágenes sin padding
-            CarouselSlider(
-              items: images.map((imagePath) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Container(
-                      width: MediaQuery.of(
-                        context,
-                      ).size.width, // El carrusel ocupa todo el ancho
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.black,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(imagePath, fit: BoxFit.cover),
+            BlocBuilder<ImageBloc, ImageState>(
+              builder: (context, state) {
+                if (state is ImageLoaded) {
+                  final publicidadImages = state.getImagesByType("Publicidad");
+                  if (publicidadImages.isNotEmpty) {
+                    return CarouselSlider(
+                      items: publicidadImages.map((image) {
+                        return Builder(
+                          builder: (BuildContext context) {
+                            return Container(
+                              width: MediaQuery.of(context).size.width,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.black,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  image.publicUrl,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+                                      },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                      options: CarouselOptions(
+                        height: MediaQuery.of(context).size.height,
+                        enlargeCenterPage: true,
+                        autoPlay: true,
+                        autoPlayInterval: const Duration(seconds: 3),
+                        autoPlayAnimationDuration: const Duration(
+                          milliseconds: 800,
+                        ),
+                        scrollDirection: Axis.horizontal,
+                        viewportFraction: 1.0,
+                        disableCenter: true,
                       ),
                     );
-                  },
+                  }
+                } else if (state is ImageLoading &&
+                    state.type == "Publicidad") {
+                  return Container(
+                    height: MediaQuery.of(context).size.height,
+                    color: Colors.grey[300],
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                // Fallback a imágenes locales si no hay datos o hay error
+                return CarouselSlider(
+                  items: fallbackImages.map((imagePath) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return Container(
+                          width: MediaQuery.of(context).size.width,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.black,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(imagePath, fit: BoxFit.cover),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                  options: CarouselOptions(
+                    height: MediaQuery.of(context).size.height,
+                    enlargeCenterPage: true,
+                    autoPlay: true,
+                    autoPlayInterval: const Duration(seconds: 3),
+                    autoPlayAnimationDuration: const Duration(
+                      milliseconds: 800,
+                    ),
+                    scrollDirection: Axis.horizontal,
+                    viewportFraction: 1.0,
+                    disableCenter: true,
+                  ),
                 );
-              }).toList(),
-              options: CarouselOptions(
-                height: MediaQuery.of(
-                  context,
-                ).size.height, // Se adapta al tamaño de la pantalla
-                enlargeCenterPage:
-                    true, // Aumenta el tamaño de la imagen central
-                autoPlay: true, // Activar el cambio automático de imágenes
-                autoPlayInterval: const Duration(
-                  seconds: 3,
-                ), // Cambiar cada 3 segundos
-                autoPlayAnimationDuration: const Duration(
-                  milliseconds: 800,
-                ), // Duración de la animación de transición
-                scrollDirection: Axis.horizontal, // Deslizar horizontalmente
-                viewportFraction: 1.0, // Ocupa todo el ancho de la pantalla
-                disableCenter:
-                    true, // Deshabilita el centrado automático de las imágenes
-              ),
+              },
             ),
 
             // Contenedor simulado como un AppBar en la parte inferior

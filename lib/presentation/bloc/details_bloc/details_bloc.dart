@@ -1,5 +1,6 @@
 import 'package:bartech_app/data/repository/local/product_category_isar_reporitory.dart';
 import 'package:bartech_app/data/repository/products_isar_repository.dart';
+import 'package:bartech_app/presentation/screens/util/memory_image_cache.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'details_event.dart';
 import 'details_state.dart';
@@ -60,11 +61,18 @@ class DetailsBloc extends Bloc<DetailsEvent, DetailsState> {
     CategorySelectedEvent event,
     Emitter<DetailsState> emit,
   ) async {
+    // Limpiar caché de imágenes al cambiar categoría
+    MemoryImageCache.clearCache();
+
+    // Pequeño delay para asegurar que la limpieza se complete
+    await Future.delayed(const Duration(milliseconds: 100));
+
     emit(
       state.copyWith(
         isLoading: true,
         selectedCategory: event.category,
         error: '',
+        products: [], // Limpiar productos anteriores inmediatamente
       ),
     );
     try {

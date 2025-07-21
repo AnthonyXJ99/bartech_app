@@ -3,42 +3,31 @@ import 'package:bartech_app/presentation/screens/util/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
   Widget _buildProductImage(String? imageUrl) {
     final validatedUrl = validateImageUrl(imageUrl);
-    
+
     if (validatedUrl != null) {
-      return Image.network(
-        validatedUrl,
+      return CachedNetworkImage(
+        imageUrl: validatedUrl,
         width: 52,
         height: 52,
         fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Image.asset(
-            "assets/products/no_image.png",
-            width: 52,
-            height: 52,
-            fit: BoxFit.contain,
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 52,
-            height: 52,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / 
-                      loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            ),
-          );
-        },
+        errorWidget: Image.asset(
+          "assets/products/no_image.png",
+          width: 52,
+          height: 52,
+          fit: BoxFit.contain,
+        ),
+        placeholder: Container(
+          width: 52,
+          height: 52,
+          child: Center(child: CircularProgressIndicator()),
+        ),
       );
     } else {
       return Image.asset(

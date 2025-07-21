@@ -8,55 +8,45 @@ import 'package:bartech_app/presentation/screens/util/util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
+import 'package:bartech_app/presentation/screens/util/icons_utils.dart';
 
 class DialogScreen extends StatelessWidget {
   const DialogScreen({super.key, required this.product});
   final Product product;
 
-  List<Map<String, dynamic>> get ingredients => [
-    {"name": "Queso", "icon": Icons.egg_alt, "amount": 1},
-    {"name": "Cebolla", "icon": Icons.ramen_dining, "amount": 1},
-    {"name": "Lechuga", "icon": Icons.grass, "amount": 1},
-    {"name": "Tomate", "icon": Icons.local_pizza, "amount": 1},
-    {"name": "Pepinillos", "icon": Icons.eco, "amount": 1},
-    {"name": "Tocino", "icon": Icons.lunch_dining, "amount": 1},
-    {"name": "Kétchup", "icon": Icons.water_drop, "amount": 1},
-    {"name": "Mayonesa", "icon": Icons.icecream, "amount": 1},
-    {"name": "Mostaza", "icon": Icons.local_fire_department, "amount": 1},
-    {"name": "Champiñón", "icon": Icons.restaurant, "amount": 1},
-    {"name": "Jalapeño", "icon": Icons.whatshot, "amount": 1},
-    {"name": "Huevo", "icon": Icons.egg, "amount": 1},
-    {"name": "Aguacate", "icon": Icons.emoji_nature, "amount": 1},
-    {
-      "name": "Carne de res para hamburguesa",
-      "icon": Icons.set_meal,
-      "amount": 1,
-    },
-    {"name": "Pollo", "icon": Icons.fastfood, "amount": 1},
-    {"name": "Sésamo", "icon": Icons.spa, "amount": 1},
-  ];
+  List<Map<String, dynamic>> get ingredientsFromProduct {
+    return (product.material ?? [])
+        .map(
+          (mat) => {
+            "name": mat.itemName ?? "Ingrediente",
+            "icon": getIconForName(mat.itemName ?? ""),
+            "amount": 1,
+          },
+        )
+        .toList();
+  }
 
-  List<Map<String, dynamic>> get baseAccompaniments => [
-    {
-      "name": "Papas Fritas",
-      "icon": Icons.restaurant,
-      "quantity": 0,
-      "price": 3.00,
-    },
-    {"name": "Ensalada", "icon": Icons.eco, "quantity": 0, "price": 2.50},
-    {
-      "name": "Refresco",
-      "icon": Icons.local_drink,
-      "quantity": 0,
-      "price": 2.00,
-    },
-    {"name": "Sundae", "icon": Icons.icecream, "quantity": 0, "price": 2.80},
-  ];
+  List<Map<String, dynamic>> get accompanimentsFromProduct {
+    return (product.accompaniment ?? [])
+        .map(
+          (acc) => {
+            "name": acc.itemName ?? "Acompañamiento",
+            "icon": getIconForName(acc.itemName ?? ""),
+            "quantity": 0,
+            "price": acc.price,
+          },
+        )
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ProductCustomizeBloc(ingredients, baseAccompaniments),
+      create: (_) => ProductCustomizeBloc(
+        ingredientsFromProduct,
+        accompanimentsFromProduct,
+      ),
       child: _DialogScreenContent(product: product),
     );
   }
@@ -75,27 +65,20 @@ class _DialogScreenContent extends StatelessWidget {
         width: 210,
         height: 160,
         fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 210,
+            height: 160,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        },
         errorBuilder: (context, error, stackTrace) {
           return Image.asset(
             "assets/products/no_image.png",
             width: 210,
             height: 160,
             fit: BoxFit.contain,
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 210,
-            height: 160,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            ),
           );
         },
       );
@@ -139,6 +122,9 @@ class _DialogScreenContent extends StatelessWidget {
                   ((product.discount ?? 0) > 0 ? (product.discount ?? 0) : 0));
               double total =
                   priceWithDiscount * state.quantity + accompanimentsTotal;
+
+              final hasIngredients = state.ingredients.isNotEmpty;
+              final hasAccompaniments = state.accompaniments.isNotEmpty;
 
               return SingleChildScrollView(
                 child: Padding(
@@ -310,84 +296,85 @@ class _DialogScreenContent extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       // Ingredientes
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Ingredientes",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            color: Colors.grey[800],
+                      if (hasIngredients) ...[
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Ingredientes",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Colors.grey[800],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      SizedBox(
-                        height: 90,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: state.ingredients.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 20),
-                          itemBuilder: (context, index) {
-                            final ing = state.ingredients[index];
-                            return IngredientSelector(
-                              name: ing["name"],
-                              icon: ing["icon"],
-                              amount: ing["amount"],
-                              onChanged: (newAmount) {
-                                context.read<ProductCustomizeBloc>().add(
-                                  SetIngredientAmount(
-                                    index: index,
-                                    amount: newAmount,
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          height: 90,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: state.ingredients.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 20),
+                            itemBuilder: (context, index) {
+                              final ing = state.ingredients[index];
+                              return IngredientSelector(
+                                name: ing["name"],
+                                icon: ing["icon"],
+                                amount: ing["amount"],
+                                onChanged: (newAmount) {
+                                  context.read<ProductCustomizeBloc>().add(
+                                    SetIngredientAmount(
+                                      index: index,
+                                      amount: newAmount,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-
+                        const SizedBox(height: 16),
+                      ],
                       // Botón para expandir acompañamientos
-                      GestureDetector(
-                        onTap: () => context.read<ProductCustomizeBloc>().add(
-                          ToggleAccompanimentsPanel(),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Row(
-                            children: [
-                              Text(
-                                "Acompañamientos",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                  color: Colors.grey[800],
+                      if (hasAccompaniments) ...[
+                        GestureDetector(
+                          onTap: () => context.read<ProductCustomizeBloc>().add(
+                            ToggleAccompanimentsPanel(),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "Acompañamientos",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: Colors.grey[800],
+                                  ),
                                 ),
-                              ),
-                              Icon(
-                                state.showAccompaniments
-                                    ? Icons.expand_less
-                                    : Icons.expand_more,
-                                color: Colors.grey[700],
-                              ),
-                            ],
+                                Icon(
+                                  state.showAccompaniments
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                  color: Colors.grey[700],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-
-                      // Panel expandible
-                      AnimatedCrossFade(
-                        duration: const Duration(milliseconds: 250),
-                        crossFadeState: state.showAccompaniments
-                            ? CrossFadeState.showFirst
-                            : CrossFadeState.showSecond,
-                        firstChild: AccompanimentList(),
-                        secondChild: const SizedBox.shrink(),
-                      ),
-                      const SizedBox(height: 10),
-
+                        // Panel expandible
+                        AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 250),
+                          crossFadeState: state.showAccompaniments
+                              ? CrossFadeState.showFirst
+                              : CrossFadeState.showSecond,
+                          firstChild: AccompanimentList(),
+                          secondChild: const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       // Precio y botón de agregar al carrito
                       Row(
                         children: [

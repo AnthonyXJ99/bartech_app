@@ -4,11 +4,13 @@ import 'package:bartech_app/data/models/local/product_accompaniment_isar.dart';
 import 'package:bartech_app/data/models/local/product_isar.dart';
 import 'package:bartech_app/data/models/local/product_material_isar.dart';
 import 'package:bartech_app/data/models/local/product_category_isar.dart';
+import 'package:bartech_app/data/repository/image_repository.dart';
 import 'package:bartech_app/data/repository/local/product_category_isar_reporitory.dart';
 import 'package:bartech_app/data/repository/product_categories_repository.dart';
 import 'package:bartech_app/data/repository/product_groups_repository.dart';
 import 'package:bartech_app/data/repository/products_isar_repository.dart';
 import 'package:bartech_app/data/repository/products_repository.dart';
+import 'package:bartech_app/data/services/image_service.dart';
 import 'package:bartech_app/data/services/product_categories_service.dart';
 import 'package:bartech_app/data/services/product_groups_service.dart';
 import 'package:bartech_app/data/services/products_service.dart';
@@ -16,6 +18,7 @@ import 'package:bartech_app/presentation/bloc/Inactivity_bloc/inactivity_bloc.da
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
+import 'package:bartech_app/presentation/bloc/image_bloc/image_bloc.dart';
 import 'package:bartech_app/presentation/bloc/payment_bloc/payment_bloc.dart';
 import 'package:bartech_app/presentation/bloc/sync-bloc/sync_bloc.dart';
 import 'package:dio/dio.dart';
@@ -81,6 +84,12 @@ void main() async {
           create: (context) =>
               ProductCategoryIsarRepository(context.read<Isar>()),
         ),
+        Provider<ImageService>(
+          create: (context) => ImageService(context.read<Dio>()),
+        ),
+        Provider<ImageRepository>(
+          create: (context) => ImageRepository(context.read<ImageService>()),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -104,6 +113,9 @@ void main() async {
           BlocProvider(create: (_) => PaymentBloc()),
           BlocProvider(
             create: (_) => InactivityBloc()..add(StartInactivityTimer(60)),
+          ),
+          BlocProvider(
+            create: (context) => ImageBloc(context.read<ImageRepository>()),
           ),
         ],
         child: const MyApp(),
