@@ -22,6 +22,7 @@ class ImageLoaded extends ImageState {
   const ImageLoaded(this.imagesByType);
 
   List<ImageResponse> getImagesByType(String type) {
+    print(type);
     return imagesByType[type] ?? [];
   }
 

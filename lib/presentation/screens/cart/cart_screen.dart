@@ -1,9 +1,9 @@
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/screens/util/util.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -17,17 +17,16 @@ class CartScreen extends StatelessWidget {
         width: 52,
         height: 52,
         fit: BoxFit.contain,
-        errorWidget: Image.asset(
-          "assets/products/no_image.png",
-          width: 52,
-          height: 52,
-          fit: BoxFit.contain,
+        placeholder: (context, url) => Container(
+          color: Colors.grey[300],
+          child: const Center(child: CircularProgressIndicator()),
         ),
-        placeholder: Container(
-          width: 52,
-          height: 52,
-          child: Center(child: CircularProgressIndicator()),
-        ),
+        errorWidget: (context, url, error) {
+          return Image.asset(
+            "assets/products/no_image.png",
+            fit: BoxFit.contain,
+          );
+        },
       );
     } else {
       return Image.asset(

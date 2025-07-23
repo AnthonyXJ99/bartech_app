@@ -9,11 +9,11 @@ import 'package:bartech_app/presentation/bloc/image_bloc/image_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/card_categories.dart';
 import 'package:bartech_app/presentation/screens/details/dialog_screen.dart';
 import 'package:bartech_app/presentation/screens/util/util.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key, required this.carruselImages});
@@ -56,13 +56,18 @@ class _DetailsViewState extends State<DetailsView> {
     super.dispose();
   }
 
+  double _calculateAspectRatio(BoxConstraints constraints) {
+    if (constraints.maxWidth > 700) return 0.9;
+    if (constraints.maxWidth > 460) return 0.85;
+    if (constraints.maxHeight > 400) return 1.3;
+    if (constraints.maxHeight > 300) return 1.0;
+    return 0.8; // ✅ Siempre mayor a 0
+  }
+
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<DetailsBloc>();
 
-    // Simula tus datos de grupos si no llegan como parámetro, ¡ajusta según tu flujo!
-    // final List<GroupItems> carruselImages = images;
-    // bloc.add(GroupSelectedEvent(images[0]));
     return Scaffold(
       floatingActionButton: BlocBuilder<CartBloc, CartState>(
         builder: (context, state) {
@@ -138,29 +143,25 @@ class _DetailsViewState extends State<DetailsView> {
                 if (publicidadImages.isNotEmpty) {
                   return CarouselSlider(
                     items: publicidadImages.map((image) {
-                      return Image.network(
-                        image.publicUrl,
+                      // ✅ REEMPLAZADO: Image.network → CachedNetworkImage
+                      return CachedNetworkImage(
+                        imageUrl: image.publicUrl!,
                         fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: CircularProgressIndicator(),
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: Colors.grey,
                             ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        },
+                          ),
+                        ),
                       );
                     }).toList(),
                     options: CarouselOptions(
@@ -241,8 +242,6 @@ class _DetailsViewState extends State<DetailsView> {
             child: Row(
               children: [
                 // Lado izquierdo: carrusel vertical de grupos
-
-                // En lugar de pasarimages por parámetro, ¡usa BlocBuilder!
                 BlocBuilder<DetailsBloc, DetailsState>(
                   builder: (context, state) {
                     // Manejar estado de carga
@@ -334,7 +333,6 @@ class _DetailsViewState extends State<DetailsView> {
                   },
                 ),
 
-                // Lado derecho: grilla de productos
                 // Lado derecho: grilla de productos filtrados por categoría seleccionada
                 Expanded(
                   child: Container(
@@ -390,15 +388,9 @@ class _DetailsViewState extends State<DetailsView> {
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: crossAxisCount,
-                                    childAspectRatio: constraints.maxWidth > 700
-                                        ? 0.9
-                                        : constraints.maxWidth > 460
-                                        ? 0.85
-                                        : constraints.maxHeight > 400
-                                        ? 1.3
-                                        : constraints.maxHeight > 300
-                                        ? 0
-                                        : 0,
+                                    childAspectRatio: _calculateAspectRatio(
+                                      constraints,
+                                    ),
                                     crossAxisSpacing: 20.0,
                                     mainAxisSpacing: 20.0,
                                   ),
@@ -459,17 +451,17 @@ class _ProductCardState extends State<_ProductCard> {
     final validatedUrl = validateImageUrl(imageUrl);
 
     if (validatedUrl != null) {
-      return Image.network(
-        validatedUrl,
+      // ✅ REEMPLAZADO: Image.network → CachedNetworkImage
+      return CachedNetworkImage(
+        imageUrl: validatedUrl,
         fit: BoxFit.fill,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            color: Colors.grey[300],
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
+        memCacheWidth: 180, // Optimización de memoria
+        memCacheHeight: 180,
+        placeholder: (context, url) => Container(
+          color: Colors.grey[300],
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        errorWidget: (context, url, error) {
           return Image.asset(
             "assets/products/no_image.png",
             fit: BoxFit.contain,
@@ -554,7 +546,7 @@ class _ProductCardState extends State<_ProductCard> {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        "${product.waitingTime ?? "0"} min", //"24min"
+                        "${product.waitingTime ?? "0"} min",
                         style: TextStyle(
                           fontSize: iconSize - 1,
                           color: Colors.grey[700],
@@ -636,7 +628,6 @@ class _ProductCardState extends State<_ProductCard> {
                                     context.read<CartBloc>().add(
                                       AddToCart(CartItem(product: product)),
                                     );
-                                    // Aquí puedes agregar lógica real de carrito
                                     // ignore: use_build_context_synchronously
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -697,8 +688,7 @@ class _ProductCardState extends State<_ProductCard> {
 // Clase CardImages para mostrar las imágenes y los nombres de las recetas
 class CardImages extends StatelessWidget {
   final GroupItems carruselImages;
-  final VoidCallback
-  onTap; // Función que se ejecuta cuando se hace clic en la imagen
+  final VoidCallback onTap;
   const CardImages({
     super.key,
     required this.carruselImages,
@@ -708,40 +698,33 @@ class CardImages extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 300, // Tamaño de las imágenes (ajustable)
+      width: 300,
       child: Column(
         children: [
           // Imagen del carrusel
           ClipRRect(
-            borderRadius: BorderRadius.circular(
-              20,
-            ), // Curvatura de las imágenes
+            borderRadius: BorderRadius.circular(20),
             child: InkWell(
               splashColor: Colors.red,
-              onTap:
-                  onTap, // Ejecutamos la función cuando se hace clic en la imagen
+              onTap: onTap,
               child: FadeInImage(
                 placeholder: const AssetImage("assets/loading1.gif"),
                 image: AssetImage(carruselImages.image),
-                fit: BoxFit
-                    .cover, // Asegura que las imágenes se ajusten correctamente
+                fit: BoxFit.cover,
               ),
             ),
           ),
           // Nombre de la receta debajo de la imagen
           Padding(
-            padding: const EdgeInsets.only(
-              top: 8.0,
-            ), // Espaciado entre la imagen y el texto
+            padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-              carruselImages
-                  .groupItemName, // Aquí se muestra el nombre de la receta
+              carruselImages.groupItemName,
               style: const TextStyle(
-                fontSize: 16, // Tamaño de la fuente
-                fontWeight: FontWeight.bold, // Negrita para mayor visibilidad
-                color: Colors.black, // Color del texto
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
-              textAlign: TextAlign.center, // Alineación centrada
+              textAlign: TextAlign.center,
             ),
           ),
         ],

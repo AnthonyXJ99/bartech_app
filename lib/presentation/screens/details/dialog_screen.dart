@@ -5,10 +5,10 @@ import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_cus
 import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
 import 'package:bartech_app/presentation/screens/details/component/ingredient_selector.dart';
 import 'package:bartech_app/presentation/screens/util/util.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
 import 'package:bartech_app/presentation/screens/util/icons_utils.dart';
 
 class DialogScreen extends StatelessWidget {
@@ -60,24 +60,18 @@ class _DialogScreenContent extends StatelessWidget {
     final validatedUrl = validateImageUrl(imageUrl);
 
     if (validatedUrl != null) {
-      return Image.network(
-        validatedUrl,
+      return CachedNetworkImage(
+        imageUrl: validatedUrl,
         width: 210,
         height: 160,
         fit: BoxFit.contain,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 210,
-            height: 160,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
+        placeholder: (context, url) => Container(
+          color: Colors.grey[300],
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        errorWidget: (context, url, error) {
           return Image.asset(
             "assets/products/no_image.png",
-            width: 210,
-            height: 160,
             fit: BoxFit.contain,
           );
         },

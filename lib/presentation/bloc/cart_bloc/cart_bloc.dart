@@ -1,4 +1,8 @@
+import 'dart:developer';
+
 import 'package:bartech_app/data/models/cart_item.dart';
+import 'package:bartech_app/data/models/order/order_response_dto.dart';
+import 'package:bartech_app/data/repository/order_repository.dart';
 import 'package:bloc/bloc.dart';
 
 part 'cart_event.dart';
@@ -61,5 +65,63 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       if (!b.containsKey(key) || b[key] != a[key]) return false;
     }
     return true;
+  }
+}
+
+
+extension CartBlocOrderExtension on CartBloc {
+  // 🚀 Procesar orden directamente desde el bloc
+  Future<OrderResponseDto> processOrder({
+    required OrderRepository orderRepository,
+    required String customerCode,
+    required String customerName,
+    required String deviceCode,
+    String? nickName,
+    String? docType,
+    String? paidType,
+    String? comments,
+  }) async {
+    try {
+      final orderResponse = await orderRepository.createOrderFromCart(
+        cartItems: state.items,
+        customerCode: customerCode,
+        customerName: customerName,
+        deviceCode: deviceCode,
+        nickName: nickName,
+        docType: docType,
+        paidType: paidType,
+        comments: comments,
+      );
+
+      // Si la orden fue exitosa, limpiar el carrito
+      add(ClearCart());
+      
+      return orderResponse;
+    } catch (e) {
+      log('❌ CartBloc - Error procesando orden: $e');
+      rethrow;
+    }
+  }
+
+  // 💰 Calcular total del carrito (ya lo tienes en el state)
+  double get cartTotal => state.subtotal;
+
+  // 📊 Obtener resumen del carrito para la orden
+  Map<String, dynamic> get orderSummary {
+    return {
+      'itemCount': state.items.length,
+      'totalQuantity': state.items.fold<int>(0, (sum, item) => sum + item.quantity),
+      'totalAmount': cartTotal,
+      'hasItems': state.items.isNotEmpty,
+      'itemDetails': state.items.map((item) => {
+        'itemCode': item.product.itemCode,
+        'itemName': item.product.itemName,
+        'quantity': item.quantity,
+        'basePrice': item.product.price,
+        'discount': item.product.discount,
+        'accompanimentCount': item.accompaniments.length,
+        'ingredientCount': item.ingredients.length,
+      }).toList(),
+    };
   }
 }

@@ -1,117 +1,137 @@
-import 'package:bartech_app/data/models/local/product_accompaniment_isar.dart';
-import 'package:bartech_app/data/models/local/product_isar.dart';
-import 'package:bartech_app/data/models/local/product_material_isar.dart';
-import 'package:isar/isar.dart';
+import 'package:bartech_app/database/database.dart';
+import 'package:bartech_app/database/models.dart';
+import 'package:bartech_app/data/models/product.dart' as ApiModels;
 
-class ProductsIsarRepository {
-  final Isar isar;
+class ProductsDriftRepository {
+  final AppDatabase _database;
 
-  ProductsIsarRepository(this.isar);
+  ProductsDriftRepository(this._database);
 
-  // INSERTAR O ACTUALIZAR productos (bulk)
-  Future<void> upsertProducts(List<ProductIsar> products) async {
-    await isar.writeTxn(() async {
+  // Insertar productos desde API
+  Future<void> insertProducts(List<ApiModels.Product> products) async {
+    await _database.transaction(() async {
       for (final product in products) {
-        // Primero, guarda los materiales y acompañamientos y obtén sus IDs
-        final materialIds = <Id>[];
-        for (final m in product.material) {
-          final id = await isar.productMaterialISars.put(m);
-          materialIds.add(id);
+        // Insertar producto principal
+        final productCompanion = DriftHelpers.productFromApi(product);
+        final productId = await _database.insertProduct(productCompanion);
+
+        // Insertar materiales y crear relaciones
+        for (final material in product.material!) {
+          final materialCompanion = DriftHelpers.productMaterialFromApi(material);
+          final materialId = await _database.insertProductMaterial(materialCompanion);
+          await _database.linkProductToMaterial(productId, materialId);
         }
 
-        final accompanimentIds = <Id>[];
-        for (final a in product.accompaniment) {
-          final id = await isar.productAccompanimentIsars.put(a);
-          accompanimentIds.add(id);
+        // Insertar acompañamientos y crear relaciones
+        for (final accompaniment in product.accompaniment!) {
+          final accompanimentCompanion = DriftHelpers.productAccompanimentFromApi(accompaniment);
+          final accompanimentId = await _database.insertProductAccompaniment(accompanimentCompanion);
+          await _database.linkProductToAccompaniment(productId, accompanimentId);
         }
-
-        // Guarda el producto
-        await isar.productIsars.put(product);
-
-        // Enlaza los materiales y acompañamientos al producto
-        product.material.clear();
-        product.accompaniment.clear();
-
-        // Busca las instancias recién insertadas y agrégalas al Link
-        final materialObjs = await isar.productMaterialISars.getAll(
-          materialIds,
-        );
-        product.material.addAll(materialObjs.whereType<ProductMaterialISar>());
-        await product.material.save();
-
-        final accompanimentObjs = await isar.productAccompanimentIsars.getAll(
-          accompanimentIds,
-        );
-        product.accompaniment.addAll(
-          accompanimentObjs.whereType<ProductAccompanimentIsar>(),
-        );
-        await product.accompaniment.save();
       }
     });
   }
 
-  // OBTENER TODOS LOS PRODUCTOS
-  Future<List<ProductIsar>> getAllProducts() async {
-    return await isar.productIsars.where().findAll();
+  // Obtener todos los productos
+  Future<List<ApiModels.Product>> getAllProducts() async {
+    final productEntities = await _database.getAllProducts();
+
+    // Convertir entidades a modelos de API
+    List<ApiModels.Product> products = [];
+
+    for (final productEntity in productEntities) {
+      // Obtener relaciones del producto
+      final relations = await _database.getProductWithRelations(productEntity.id);
+      final materialEntities = relations['materials'] as List<ProductMaterialEntity>;
+      final accompanimentEntities = relations['accompaniments'] as List<ProductAccompanimentEntity>;
+
+      // Convertir a modelo de API
+      final product = productEntity.toApiModel(
+        materials: materialEntities.map((e) => e.toApiModel()).toList(),
+        accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+      );
+
+      products.add(product);
+    }
+
+    return products;
   }
 
-  // OBTENER PRODUCTO POR ID
-  Future<ProductIsar?> getProductById(int id) async {
-    return await isar.productIsars.get(id);
-  }
+  // Stream reactivo de productos
+  Stream<List<ApiModels.Product>> watchAllProducts() {
+    return _database.watchAllProducts().asyncMap((productEntities) async {
+      List<ApiModels.Product> products = [];
 
-  // OBTENER PRODUCTO POR itemCode
-  Future<ProductIsar?> getProductByItemCode(String itemCode) async {
-    return await isar.productIsars
-        .filter()
-        .itemCodeEqualTo(itemCode)
-        .findFirst();
-  }
+      for (final productEntity in productEntities) {
+        try {
+          // Obtener relaciones del producto
+          final relations = await _database.getProductWithRelations(productEntity.id);
+          final materialEntities = relations['materials'] as List<ProductMaterialEntity>;
+          final accompanimentEntities = relations['accompaniments'] as List<ProductAccompanimentEntity>;
 
-  // OBTENER PRODUCTOS POR CATEGORÍA
-  Future<List<ProductIsar>> getProductsByCategory(String categoryCode) async {
-    return await isar.productIsars
-        .filter()
-        .categoryItemCodeEqualTo(categoryCode)
-        .findAll();
-  }
+          // Convertir a modelo de API
+          final product = productEntity.toApiModel(
+            materials: materialEntities.map((e) => e.toApiModel()).toList(),
+            accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+          );
 
-  // OBTENER PRODUCTOS POR GRUPO
-  Future<List<ProductIsar>> getProductsByGroup(String groupCode) async {
-    return await isar.productIsars
-        .filter()
-        .groupItemCodeEqualTo(groupCode)
-        .findAll();
-  }
+          products.add(product);
+        } catch (e) {
+          // Si hay error obteniendo relaciones, crear producto sin relaciones
+          final product = productEntity.toApiModel(materials: [], accompaniments: []);
+          products.add(product);
+        }
+      }
 
-  // ELIMINAR UN PRODUCTO POR ID
-  Future<void> deleteProductById(int id) async {
-    await isar.writeTxn(() async {
-      await isar.productIsars.delete(id);
+      return products;
     });
   }
 
-  // ELIMINAR TODOS LOS PRODUCTOS
+  // Obtener productos por categoría
+  Future<List<ApiModels.Product>> getProductsByCategory(String categoryCode) async {
+    final allProducts = await getAllProducts();
+    return allProducts.where((product) => product.categoryItemCode == categoryCode).toList();
+  }
+
+  // Buscar productos
+  Future<List<ApiModels.Product>> searchProducts(String query) async {
+    final allProducts = await getAllProducts();
+    return allProducts.where((product) =>
+    product.itemName.toLowerCase().contains(query.toLowerCase()) ||
+        (product.description?.toLowerCase().contains(query.toLowerCase()) ?? false)
+    ).toList();
+  }
+
+  // Limpiar todos los productos
   Future<void> clearAllProducts() async {
-    await isar.writeTxn(() async {
-      await isar.productIsars.clear();
-      await isar.productMaterialISars.clear();
-      await isar.productAccompanimentIsars.clear();
+    await _database.transaction(() async {
+      // Limpiar relaciones primero
+      await _database.delete(_database.productMaterialRelations).go();
+      await _database.delete(_database.productAccompanimentRelations).go();
+
+      // Luego limpiar tablas principales
+      await _database.delete(_database.productMaterials).go();
+      await _database.delete(_database.productAccompaniments).go();
+      await _database.delete(_database.products).go();
     });
   }
 
-  // ACTUALIZAR UN PRODUCTO
-  Future<void> updateProduct(ProductIsar product) async {
-    await isar.writeTxn(() async {
-      await isar.productIsars.put(product);
-      await product.material.save();
-      await product.accompaniment.save();
-    });
-  }
+  // Obtener producto específico por itemCode
+  Future<ApiModels.Product?> getProductByItemCode(String itemCode) async {
+    try {
+      final productEntity = await (_database.select(_database.products)
+        ..where((p) => p.itemCode.equals(itemCode))).getSingle();
 
-  // SINCRONIZAR DESDE API (sobreescribe todo)
-  Future<void> syncFromApi(List<ProductIsar> apiProducts) async {
-    await clearAllProducts();
-    await upsertProducts(apiProducts);
+      final relations = await _database.getProductWithRelations(productEntity.id);
+      final materialEntities = relations['materials'] as List<ProductMaterialEntity>;
+      final accompanimentEntities = relations['accompaniments'] as List<ProductAccompanimentEntity>;
+
+      return productEntity.toApiModel(
+        materials: materialEntities.map((e) => e.toApiModel()).toList(),
+        accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+      );
+    } catch (e) {
+      return null;
+    }
   }
 }

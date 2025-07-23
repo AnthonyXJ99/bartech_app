@@ -1,8 +1,7 @@
-import 'package:bartech_app/data/models/local/product_isar.dart';
-import 'package:bartech_app/data/repository/products_isar_repository.dart';
+import 'package:bartech_app/data/repository/products_drift_repository.dart';
 import 'package:bartech_app/data/repository/products_repository.dart';
 import 'package:bartech_app/data/repository/product_categories_repository.dart';
-import 'package:bartech_app/data/repository/local/product_category_isar_reporitory.dart';
+import 'package:bartech_app/data/repository/local/product_category_drift_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -11,9 +10,9 @@ part 'sync_state.dart';
 
 class SyncBloc extends Bloc<SyncEvent, SyncState> {
   final ProductsRepository productsRepository;
-  final ProductsIsarRepository productsIsarRepository;
+  final ProductsDriftRepository productsIsarRepository; // ✅ Actualizado
   final ProductCategoriesRepository productCategoriesRepository;
-  final ProductCategoryIsarRepository productCategoryIsarRepository;
+  final ProductCategoryDriftRepository productCategoryIsarRepository; // ✅ Actualizado
 
   SyncBloc({
     required this.productsRepository,
@@ -27,13 +26,11 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
         // 1. Recuperar productos desde la API
         final products = await productsRepository.getAllProducts();
 
-        // 2. Convertir a ProductIsar
-        final productsIsar = products
-            .map((p) => ProductIsar.fromApi(p))
-            .toList();
+        // 2. Limpiar productos existentes en Drift
+        await productsIsarRepository.clearAllProducts();
 
-        // 3. Guardar en Isar
-        await productsIsarRepository.syncFromApi(productsIsar);
+        // 3. Guardar productos en Drift (ya no necesitas convertir a ProductIsar)
+        await productsIsarRepository.insertProducts(products);
 
         emit(SyncSuccess());
       } catch (e) {
@@ -47,8 +44,11 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
         // 1. Recuperar categorías desde la API
         final categories = await productCategoriesRepository.getAllCategories();
 
-        // 2dar en Isar usando el repositorio Isar
-        await productCategoryIsarRepository.syncFromApi(categories);
+        // 2. Limpiar categorías existentes en Drift
+        await productCategoryIsarRepository.clearAllCategories();
+
+        // 3. Guardar categorías en Drift
+        await productCategoryIsarRepository.insertProductCategories(categories);
 
         emit(SyncSuccess());
       } catch (e) {
@@ -63,19 +63,18 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
         final products = await productsRepository.getAllProducts();
         final categories = await productCategoriesRepository.getAllCategories();
 
-        // 2. Convertir productos a ProductIsar
-        final productsIsar = products
-            .map((p) => ProductIsar.fromApi(p))
-            .toList();
+        // 2. Limpiar datos existentes en Drift
+        await productsIsarRepository.clearAllProducts();
+        await productCategoryIsarRepository.clearAllCategories();
 
-        // 3. Guardar productos en Isar
-        await productsIsarRepository.syncFromApi(productsIsar);
+        // 3. Guardar productos en Drift (sin conversión)
+        await productsIsarRepository.insertProducts(products);
 
-        // 4Guardar categorías en Isar
-        await productCategoryIsarRepository.syncFromApi(categories);
+        // 4. Guardar categorías en Drift
+        await productCategoryIsarRepository.insertProductCategories(categories);
 
         emit(SyncSuccess());
-        
+
       } catch (e) {
         emit(SyncFailure(error: e.toString()));
       }

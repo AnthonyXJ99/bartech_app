@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -68,29 +69,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  image.publicUrl,
+                                child: CachedNetworkImage(
+                                  imageUrl: image.publicUrl!,
                                   fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Container(
-                                          color: Colors.grey[300],
-                                          child: const Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        );
-                                      },
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[300],
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.grey[300],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) {
+                                    return Image.asset(
+                                      "assets/products/no_image.png",
+                                      fit: BoxFit.contain,
                                     );
                                   },
                                 ),

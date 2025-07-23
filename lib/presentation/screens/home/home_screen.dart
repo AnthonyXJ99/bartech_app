@@ -1,7 +1,7 @@
 import 'package:bartech_app/presentation/bloc/Inactivity_bloc/inactivity_bloc.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/image_bloc/image_bloc.dart';
-import 'package:bartech_app/presentation/screens/widget/cache_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -200,16 +200,16 @@ class _HomeScreenState extends State<HomeScreen>
         final logoImage = logoImages.first;
         return Hero(
           tag: 'app_logo',
-          child: Image.network(
-            logoImage.publicUrl,
+          child: CachedNetworkImage(
+            imageUrl: logoImage.publicUrl!,
             height: 120,
             fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return _buildLogoPlaceholder();
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return _buildFallbackLogo();
+            placeholder: (context, url) => Container(
+              color: Colors.grey[300],
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+            errorWidget: (context, url, error) {
+              return Image.asset("assets/choose/logo.png", fit: BoxFit.contain);
             },
           ),
         );

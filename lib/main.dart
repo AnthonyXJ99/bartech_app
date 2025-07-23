@@ -1,19 +1,19 @@
 import 'package:bartech_app/config/router.dart';
 import 'package:bartech_app/config/theme.dart';
-import 'package:bartech_app/data/models/local/product_accompaniment_isar.dart';
-import 'package:bartech_app/data/models/local/product_isar.dart';
-import 'package:bartech_app/data/models/local/product_material_isar.dart';
-import 'package:bartech_app/data/models/local/product_category_isar.dart';
 import 'package:bartech_app/data/repository/image_repository.dart';
-import 'package:bartech_app/data/repository/local/product_category_isar_reporitory.dart';
+import 'package:bartech_app/data/repository/local/product_category_drift_repository.dart';
 import 'package:bartech_app/data/repository/product_categories_repository.dart';
 import 'package:bartech_app/data/repository/product_groups_repository.dart';
-import 'package:bartech_app/data/repository/products_isar_repository.dart';
+import 'package:bartech_app/data/repository/products_drift_repository.dart';
 import 'package:bartech_app/data/repository/products_repository.dart';
+// 🚀 NUEVO: Order imports
+import 'package:bartech_app/data/repository/order_repository.dart';
 import 'package:bartech_app/data/services/image_service.dart';
 import 'package:bartech_app/data/services/product_categories_service.dart';
 import 'package:bartech_app/data/services/product_groups_service.dart';
 import 'package:bartech_app/data/services/products_service.dart';
+// 🚀 NUEVO: Order service import
+import 'package:bartech_app/data/services/order_service.dart';
 import 'package:bartech_app/presentation/bloc/Inactivity_bloc/inactivity_bloc.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
@@ -21,40 +21,36 @@ import 'package:bartech_app/presentation/bloc/details_bloc/details_event.dart';
 import 'package:bartech_app/presentation/bloc/image_bloc/image_bloc.dart';
 import 'package:bartech_app/presentation/bloc/payment_bloc/payment_bloc.dart';
 import 'package:bartech_app/presentation/bloc/sync-bloc/sync_bloc.dart';
+import 'package:bartech_app/database/database.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final dir = await getApplicationDocumentsDirectory();
-
-  final isar = await Isar.open([
-    ProductIsarSchema,
-    ProductMaterialISarSchema,
-    ProductAccompanimentIsarSchema,
-    ProductCategoryIsarSchema,
-  ], directory: dir.path);
+  // Inicializar Drift en lugar de Isar
+  final database = AppDatabase();
 
   runApp(
     MultiProvider(
       providers: [
+        // 🌐 DIO CONFIGURATION
         Provider<Dio>(
           create: (_) => Dio(
             BaseOptions(
-              baseUrl: 'http://192.168.18.43:5023/',
+              baseUrl: 'http://192.168.20.10:9095/',
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
             ),
           ),
         ),
-        //Isar
-        Provider<Isar>.value(value: isar),
+        
+        // 🗄️ DATABASE
+        Provider<AppDatabase>.value(value: database),
 
+        // 🌐 SERVICES (API)
         Provider<ProductsService>(
           create: (context) => ProductsService(context.read<Dio>()),
         ),
@@ -64,6 +60,15 @@ void main() async {
         Provider<ProductGroupsService>(
           create: (context) => ProductGroupsService(context.read<Dio>()),
         ),
+        Provider<ImageService>(
+          create: (context) => ImageService(context.read<Dio>()),
+        ),
+        // 🚀 NUEVO: Order Service
+        Provider<OrderService>(
+          create: (context) => OrderService(context.read<Dio>()),
+        ),
+
+        // 📂 REPOSITORIES (API)
         Provider<ProductsRepository>(
           create: (context) =>
               ProductsRepository(context.read<ProductsService>()),
@@ -77,18 +82,22 @@ void main() async {
           create: (context) =>
               ProductGroupsRepository(context.read<ProductGroupsService>()),
         ),
-        Provider<ProductsIsarRepository>(
-          create: (context) => ProductsIsarRepository(context.read<Isar>()),
-        ),
-        Provider<ProductCategoryIsarRepository>(
-          create: (context) =>
-              ProductCategoryIsarRepository(context.read<Isar>()),
-        ),
-        Provider<ImageService>(
-          create: (context) => ImageService(context.read<Dio>()),
-        ),
         Provider<ImageRepository>(
           create: (context) => ImageRepository(context.read<ImageService>()),
+        ),
+        // 🚀 NUEVO: Order Repository
+        Provider<OrderRepository>(
+          create: (context) => OrderRepository(context.read<OrderService>()),
+        ),
+
+        // 🗄️ LOCAL REPOSITORIES (Drift)
+        Provider<ProductsDriftRepository>(
+          create: (context) =>
+              ProductsDriftRepository(context.read<AppDatabase>()),
+        ),
+        Provider<ProductCategoryDriftRepository>(
+          create: (context) =>
+              ProductCategoryDriftRepository(context.read<AppDatabase>()),
         ),
       ],
       child: MultiBlocProvider(
@@ -96,17 +105,18 @@ void main() async {
           BlocProvider(
             create: (context) => SyncBloc(
               productsRepository: context.read<ProductsRepository>(),
-              productsIsarRepository: context.read<ProductsIsarRepository>(),
+              productsIsarRepository: context.read<ProductsDriftRepository>(),
               productCategoriesRepository: context
                   .read<ProductCategoriesRepository>(),
               productCategoryIsarRepository: context
-                  .read<ProductCategoryIsarRepository>(),
+                  .read<ProductCategoryDriftRepository>(),
             )..add(SyncAllEvent()),
           ),
           BlocProvider(
             create: (context) => DetailsBloc(
-              categoryRepository: context.read<ProductCategoryIsarRepository>(),
-              productsIsarRepository: context.read<ProductsIsarRepository>(),
+              categoryRepository: context
+                  .read<ProductCategoryDriftRepository>(),
+              productsIsarRepository: context.read<ProductsDriftRepository>(),
             ),
           ),
           BlocProvider(create: (_) => CartBloc()),

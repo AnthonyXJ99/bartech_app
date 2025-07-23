@@ -1,180 +1,102 @@
-import 'package:bartech_app/data/models/local/product_category_isar.dart';
-import 'package:bartech_app/data/models/product_category.dart';
-import 'package:isar/isar.dart';
+import 'package:bartech_app/database/database.dart';
+import 'package:bartech_app/database/models.dart';
+import 'package:bartech_app/data/models/product_category.dart' as ApiModels;
+import 'package:drift/drift.dart';
 
-class ProductCategoryIsarRepository {
-  final Isar isar;
+class ProductCategoryDriftRepository {
+  final AppDatabase _database;
 
-  ProductCategoryIsarRepository(this.isar);
+  ProductCategoryDriftRepository(this._database);
 
-  // INSERTAR O ACTUALIZAR categorías (bulk)
-  Future<void> upsertCategories(List<ProductCategoryIsar> categories) async {
-    await isar.writeTxn(() async {
+  // Insertar categorías desde API
+  Future<void> insertProductCategories(List<ApiModels.ProductCategory> categories) async {
+    await _database.transaction(() async {
       for (final category in categories) {
-        await isar.productCategoryIsars.put(category);
+        final companion = DriftHelpers.productCategoryFromApi(category);
+        await _database.insertProductCategory(companion);
       }
     });
   }
 
-  // INSERTAR O ACTUALIZAR UNA CATEGORÍA
-  Future<void> upsertCategory(ProductCategoryIsar category) async {
-    await isar.writeTxn(() async {
-      await isar.productCategoryIsars.put(category);
-    });
+  // Obtener todas las categorías
+  Future<List<ApiModels.ProductCategory>> getAllProductCategories() async {
+    final categoryEntities = await _database.getAllProductCategories();
+    return categoryEntities.map((entity) => entity.toApiModel()).toList();
   }
 
-  // OBTENER TODAS LAS CATEGORÍAS
-  Future<List<ProductCategoryIsar>> getAllCategories() async {
-    return await isar.productCategoryIsars.where().findAll();
+  // Stream reactivo de categorías
+  Stream<List<ApiModels.ProductCategory>> watchAllProductCategories() {
+    return _database.watchAllProductCategories().map(
+          (entities) => entities.map((entity) => entity.toApiModel()).toList(),
+    );
   }
 
-  // OBTENER CATEGORÍAS ORDENADAS POR visOrder
-  Future<List<ProductCategoryIsar>> getAllCategoriesOrdered() async {
-    return await isar.productCategoryIsars.where().sortByVisOrder().findAll();
+  // Obtener categorías habilitadas
+  Future<List<ApiModels.ProductCategory>> getEnabledCategories() async {
+    final allCategories = await getAllProductCategories();
+    return allCategories.where((category) => category.enabled == 'Y').toList();
   }
 
-  // OBTENER CATEGORÍA POR ID
-  Future<ProductCategoryIsar?> getCategoryById(int id) async {
-    return await isar.productCategoryIsars.get(id);
+  // Stream de categorías habilitadas
+  Stream<List<ApiModels.ProductCategory>> watchEnabledCategories() {
+    return watchAllProductCategories().map(
+          (categories) => categories.where((category) => category.enabled == 'Y').toList(),
+    );
   }
 
-  // OBTENER CATEGORÍA POR categoryItemCode
-  Future<ProductCategoryIsar?> getCategoryByCode(
-    String categoryItemCode,
-  ) async {
-    return await isar.productCategoryIsars
-        .filter()
-        .categoryItemCodeEqualTo(categoryItemCode)
-        .findFirst();
+  // Obtener categoría por código
+  Future<ApiModels.ProductCategory?> getCategoryByCode(String categoryCode) async {
+    try {
+      final categoryEntity = await (_database.select(_database.productCategories)
+        ..where((c) => c.categoryItemCode.equals(categoryCode))).getSingle();
+
+      return categoryEntity.toApiModel();
+    } catch (e) {
+      return null;
+    }
   }
 
-  // OBTENER CATEGORÍAS POR GRUPO
-  Future<List<ProductCategoryIsar>> getCategoriesByGroup(
-    String groupItemCode,
-  ) async {
-    return await isar.productCategoryIsars
-        .filter()
-        .groupItemCodeEqualTo(groupItemCode)
-        .findAll();
+  // Buscar categorías
+  Future<List<ApiModels.ProductCategory>> searchCategories(String query) async {
+    final allCategories = await getAllProductCategories();
+    return allCategories.where((category) =>
+    category.categoryItemName.toLowerCase().contains(query.toLowerCase()) ||
+        (category.description?.toLowerCase().contains(query.toLowerCase()) ?? false)
+    ).toList();
   }
 
-  // OBTENER CATEGORÍAS HABILITADAS
-  Future<List<ProductCategoryIsar>> getEnabledCategories() async {
-    return await isar.productCategoryIsars
-        .filter()
-        .enabledEqualTo('Y')
-        .findAll();
+  // Obtener categorías ordenadas por visOrder
+  Future<List<ApiModels.ProductCategory>> getCategoriesOrdered() async {
+    final categoryEntities = await (_database.select(_database.productCategories)
+      ..orderBy([(c) => OrderingTerm.asc(c.visOrder)])).get();
+
+    return categoryEntities.map((entity) => entity.toApiModel()).toList();
   }
 
-  // OBTENER CATEGORÍAS HABILITADAS ORDENADAS
-  Future<List<ProductCategoryIsar>> getEnabledCategoriesOrdered() async {
-    return await isar.productCategoryIsars
-        .filter()
-        .enabledEqualTo('Y')
-        .sortByVisOrder()
-        .findAll();
+  // Stream de categorías ordenadas
+  Stream<List<ApiModels.ProductCategory>> watchCategoriesOrdered() {
+    return (_database.select(_database.productCategories)
+      ..orderBy([(c) => OrderingTerm.asc(c.visOrder)])).watch().map(
+          (entities) => entities.map((entity) => entity.toApiModel()).toList(),
+    );
   }
 
-  // BUSCAR CATEGORÍAS POR NOMBRE
-  Future<List<ProductCategoryIsar>> searchCategoriesByName(String name) async {
-    return await isar.productCategoryIsars
-        .filter()
-        .categoryItemNameContains(name, caseSensitive: false)
-        .findAll();
-  }
-
-  // ELIMINAR UNA CATEGORÍA POR ID
-  Future<void> deleteCategoryById(int id) async {
-    await isar.writeTxn(() async {
-      await isar.productCategoryIsars.delete(id);
-    });
-  }
-
-  // ELIMINAR UNA CATEGORÍA POR categoryItemCode
-  Future<void> deleteCategoryByCode(String categoryItemCode) async {
-    await isar.writeTxn(() async {
-      final category = await getCategoryByCode(categoryItemCode);
-      if (category != null) {
-        await isar.productCategoryIsars.delete(category.id);
-      }
-    });
-  }
-
-  // ELIMINAR TODAS LAS CATEGORÍAS
+  // Limpiar todas las categorías
   Future<void> clearAllCategories() async {
-    await isar.writeTxn(() async {
-      await isar.productCategoryIsars.clear();
-    });
+    await _database.delete(_database.productCategories).go();
   }
 
-  // ACTUALIZAR UNA CATEGORÍA
-  Future<void> updateCategory(ProductCategoryIsar category) async {
-    await isar.writeTxn(() async {
-      await isar.productCategoryIsars.put(category);
-    });
+  // Actualizar categoría
+  Future<void> updateCategory(ApiModels.ProductCategory category) async {
+    final companion = DriftHelpers.productCategoryFromApi(category);
+    await (_database.update(_database.productCategories)
+      ..where((c) => c.categoryItemCode.equals(category.categoryItemCode)))
+        .write(companion);
   }
 
-  // SINCRONIZAR DESDE API (sobreescribe todo)
-  Future<void> syncFromApi(List<ProductCategory> apiCategories) async {
-    await isar.writeTxn(() async {
-      // Limpiar todas las categorías existentes
-      await isar.productCategoryIsars.clear();
-
-      // Convertir y guardar las nuevas categorías
-      for (final apiCategory in apiCategories) {
-        final categoryIsar = ProductCategoryIsar.fromApi(apiCategory);
-        await isar.productCategoryIsars.put(categoryIsar);
-      }
-    });
-  }
-
-  // SINCRONIZAR DESDE JSON (sobreescribe todo)
-  Future<void> syncFromJson(List<Map<String, dynamic>> jsonCategories) async {
-    await isar.writeTxn(() async {
-      // Limpiar todas las categorías existentes
-      await isar.productCategoryIsars.clear();
-
-      // Convertir y guardar las nuevas categorías
-      for (final jsonCategory in jsonCategories) {
-        final categoryIsar = ProductCategoryIsar.fromJson(jsonCategory);
-        await isar.productCategoryIsars.put(categoryIsar);
-      }
-    });
-  }
-
-  // OBTENER CATEGORÍAS COMO ProductCategory (para compatibilidad)
-  Future<List<ProductCategory>> getAllCategoriesAsProductCategory() async {
-    final categoriesIsar = await getAllCategories();
-    return categoriesIsar.map((c) => c.toProductCategory()).toList();
-  }
-
-  // OBTENER CATEGORÍAS HABILITADAS COMO ProductCategory
-  Future<List<ProductCategory>> getEnabledCategoriesAsProductCategory() async {
-    final categoriesIsar = await getEnabledCategories();
-    return categoriesIsar.map((c) => c.toProductCategory()).toList();
-  }
-
-  // OBTENER CATEGORÍA POR CÓDIGO COMO ProductCategory
-  Future<ProductCategory?> getCategoryByCodeAsProductCategory(
-    String categoryItemCode,
-  ) async {
-    final categoryIsar = await getCategoryByCode(categoryItemCode);
-    return categoryIsar?.toProductCategory();
-  }
-
-  // VERIFICAR SI EXISTE UNA CATEGORÍA
-  Future<bool> categoryExists(String categoryItemCode) async {
-    final category = await getCategoryByCode(categoryItemCode);
-    return category != null;
-  }
-
-  // CONTAR TOTAL DE CATEGORÍAS
-  Future<int> getCategoriesCount() async {
-    return await isar.productCategoryIsars.count();
-  }
-
-  // CONTAR CATEGORÍAS HABILITADAS
-  Future<int> getEnabledCategoriesCount() async {
-    return await isar.productCategoryIsars.filter().enabledEqualTo('Y').count();
+  // Eliminar categoría por código
+  Future<void> deleteCategoryByCode(String categoryCode) async {
+    await (_database.delete(_database.productCategories)
+      ..where((c) => c.categoryItemCode.equals(categoryCode))).go();
   }
 }
