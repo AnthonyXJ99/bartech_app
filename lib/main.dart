@@ -46,7 +46,7 @@ void main() async {
             ),
           ),
         ),
-        
+
         // 🗄️ DATABASE
         Provider<AppDatabase>.value(value: database),
 

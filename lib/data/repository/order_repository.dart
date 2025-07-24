@@ -2,7 +2,6 @@
 // 📂 ORDER REPOSITORY - SIGUIENDO TU PATRÓN
 // =================================================================
 
-
 import 'dart:developer';
 
 import 'package:bartech_app/data/models/cart_item.dart';
@@ -10,6 +9,9 @@ import 'package:bartech_app/data/models/order/order_create_dto.dart';
 import 'package:bartech_app/data/models/order/order_response_dto.dart';
 import 'package:bartech_app/data/services/order_service.dart';
 
+// =================================================================
+// 📂 ORDER REPOSITORY - SIGUIENDO TU PATRÓN
+// =================================================================
 class OrderRepository {
   final OrderService _orderService;
 
@@ -37,9 +39,6 @@ class OrderRepository {
     String? comments,
   }) async {
     try {
-
-      log(' Repository - Error creando orden desde carrito: $cartItems');
-
       return await _orderService.createOrderFromCart(
         cartItems: cartItems,
         customerCode: customerCode,
@@ -80,26 +79,6 @@ class OrderRepository {
       return await _orderService.getOrderById(orderId);
     } catch (e) {
       log('❌ Repository - Error obteniendo orden $orderId: $e');
-      rethrow;
-    }
-  }
-
-  // 👤 Obtener órdenes por cliente
-  Future<List<OrderResponseDto>> getOrdersByCustomer(String customerCode) async {
-    try {
-      return await _orderService.getOrdersByCustomer(customerCode);
-    } catch (e) {
-      log('❌ Repository - Error obteniendo órdenes del cliente: $e');
-      rethrow;
-    }
-  }
-
-  // 📊 Obtener órdenes por estado
-  Future<List<OrderResponseDto>> getOrdersByStatus(String status) async {
-    try {
-      return await _orderService.getOrdersByStatus(status);
-    } catch (e) {
-      log('❌ Repository - Error obteniendo órdenes por estado: $e');
       rethrow;
     }
   }

@@ -51,9 +51,11 @@ class OrderResponseDto {
       customerName: json['customerName'] as String?,
       nickName: json['nickName'] as String?,
       deviceCode: json['deviceCode'] as String?,
-      docDate: json['docDate'] != null ? DateTime.parse(json['docDate']) : null,
-      docDueDate: json['docDueDate'] != null
-          ? DateTime.parse(json['docDueDate'])
+      docDate: json['docDate'] != null 
+          ? DateTime.parse(json['docDate']) 
+          : null,
+      docDueDate: json['docDueDate'] != null 
+          ? DateTime.parse(json['docDueDate']) 
           : null,
       docStatus: json['docStatus'] as String?,
       docType: json['docType'] as String?,
@@ -66,8 +68,8 @@ class OrderResponseDto {
       comments: json['comments'] as String?,
       orderLines: json['orderLines'] != null
           ? (json['orderLines'] as List)
-                .map((e) => DocumentLineResponseDto.fromJson(e))
-                .toList()
+              .map((e) => DocumentLineResponseDto.fromJson(e))
+              .toList()
           : null,
     );
   }
@@ -138,8 +140,8 @@ class OrderResponseDtoPaginatedResult {
     return OrderResponseDtoPaginatedResult(
       data: json['data'] != null
           ? (json['data'] as List)
-                .map((e) => OrderResponseDto.fromJson(e))
-                .toList()
+              .map((e) => OrderResponseDto.fromJson(e))
+              .toList()
           : null,
       page: json['page'] as int,
       pageSize: json['pageSize'] as int,

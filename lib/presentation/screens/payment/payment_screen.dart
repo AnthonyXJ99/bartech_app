@@ -17,7 +17,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final _nicknameController = TextEditingController();
   String _selectedDocType = 'T'; // T=Ticket, B=Boleta, F=Factura
   bool _isProcessing = false;
-  
+
   @override
   void dispose() {
     _nicknameController.dispose();
@@ -39,32 +39,35 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // 🚀 Procesar orden
   Future<void> _processOrder(BuildContext context) async {
     setState(() => _isProcessing = true);
-    
+
     final cartBloc = context.read<CartBloc>();
     final orderRepository = context.read<OrderRepository>();
     final paymentState = context.read<PaymentBloc>().state;
-    
+
     try {
       final orderResponse = await cartBloc.processOrder(
         orderRepository: orderRepository,
         customerCode: "WALK_IN", // Cliente genérico
-        customerName: _nicknameController.text.isNotEmpty 
-            ? _nicknameController.text 
+        customerName: _nicknameController.text.isNotEmpty
+            ? _nicknameController.text
             : "Cliente",
         deviceCode: "KIOSK_001", // Configurable
-        nickName: _nicknameController.text.isNotEmpty 
-            ? _nicknameController.text 
+        nickName: _nicknameController.text.isNotEmpty
+            ? _nicknameController.text
             : null,
         docType: _selectedDocType,
         paidType: paymentState.selectedMethod == PaymentMethod.cash ? "C" : "T",
-        comments: "Pedido desde kiosk - Ticket #${widget.ticketNumber}",
+        comments: "Pedido desde kiosk", // ✅ SIN número fijo
       );
 
       if (mounted) {
-        // ✅ Orden creada exitosamente
-        _showSuccessDialog(context, orderResponse.docEntry?.toString() ?? "N/A");
+        // ✅ Orden creada exitosamente - usar folioNum como ticket
+        final ticketNumber =
+            orderResponse.folioNum ??
+            orderResponse.docEntry?.toString() ??
+            "N/A";
+        _showSuccessDialog(context, ticketNumber);
       }
-      
     } catch (e) {
       if (mounted) {
         // ❌ Error al procesar
@@ -78,7 +81,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // ✅ Dialog de éxito
-  void _showSuccessDialog(BuildContext context, String orderId) {
+  void _showSuccessDialog(BuildContext context, String ticketNumber) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -95,8 +98,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Orden #$orderId creada exitosamente",
-              style: TextStyle(color: Colors.grey[600]),
+              "Tu número de orden es:\n#$ticketNumber",
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -169,7 +172,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   final method = paymentState.selectedMethod;
 
                   // Actualizar tipo de documento cuando cambia el método
-                  if (method != null && _selectedDocType != _getDefaultDocType(method)) {
+                  if (method != null &&
+                      _selectedDocType != _getDefaultDocType(method)) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       setState(() {
                         _selectedDocType = _getDefaultDocType(method);
@@ -179,168 +183,170 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                   return SingleChildScrollView(
                     child: Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Total a pagar",
-                      style: TextStyle(color: Colors.grey, fontSize: 15),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "\$${total.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        color: orange,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 38,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    
-                    // 💳 Selección de método de pago
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "¿Cómo deseas pagar?",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
                       children: [
-                        Expanded(
-                          child: PaymentOptionCard(
-                            icon: Icons.attach_money,
-                            label: "Efectivo",
+                        const SizedBox(height: 10),
+                        const Text(
+                          "Total a pagar",
+                          style: TextStyle(color: Colors.grey, fontSize: 15),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "\$${total.toStringAsFixed(2)}",
+                          style: TextStyle(
                             color: orange,
-                            selected: method == PaymentMethod.cash,
-                            onTap: () => context.read<PaymentBloc>().add(
-                              SelectPaymentMethod(PaymentMethod.cash),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 38,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+
+                        // 💳 Selección de método de pago
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "¿Cómo deseas pagar?",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: PaymentOptionCard(
-                            icon: Icons.contactless,
-                            label: "Tarjeta/NFC",
-                            color: orange,
-                            selected: method == PaymentMethod.card,
-                            onTap: () => context.read<PaymentBloc>().add(
-                              SelectPaymentMethod(PaymentMethod.card),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: PaymentOptionCard(
+                                icon: Icons.attach_money,
+                                label: "Efectivo",
+                                color: orange,
+                                selected: method == PaymentMethod.cash,
+                                onTap: () => context.read<PaymentBloc>().add(
+                                  SelectPaymentMethod(PaymentMethod.cash),
+                                ),
+                              ),
                             ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: PaymentOptionCard(
+                                icon: Icons.contactless,
+                                label: "Tarjeta/NFC",
+                                color: orange,
+                                selected: method == PaymentMethod.card,
+                                onTap: () => context.read<PaymentBloc>().add(
+                                  SelectPaymentMethod(PaymentMethod.card),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // 📋 Sección de detalles adicionales (se expande cuando se selecciona método)
+                        if (method != null) ...[
+                          const SizedBox(height: 30),
+                          PaymentDetailsSection(
+                            paymentMethod: method,
+                            nicknameController: _nicknameController,
+                            selectedDocType: _selectedDocType,
+                            onDocTypeChanged: (newType) {
+                              setState(() => _selectedDocType = newType);
+                            },
+                            color: orange,
+                          ),
+                        ],
+
+                        const SizedBox(height: 40),
+
+                        // 🔄 Indicador de procesamiento o instrucciones
+                        if (method == PaymentMethod.card && !_isProcessing)
+                          Column(
+                            children: [
+                              Icon(Icons.contactless, size: 48, color: orange),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "Acerca tu tarjeta o dispositivo NFC...",
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (method == PaymentMethod.cash && !_isProcessing)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              "Espera al cajero para finalizar tu pago.",
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+
+                        if (_isProcessing)
+                          Column(
+                            children: [
+                              CircularProgressIndicator(color: orange),
+                              const SizedBox(height: 16),
+                              const Text(
+                                "Procesando tu orden...",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                        // ✅ Espacio adaptativo en lugar de Spacer()
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.05,
+                        ),
+
+                        // 🚀 Botón de pago
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: (method == null || _isProcessing)
+                                ? null
+                                : () => _processOrder(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: orange,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isProcessing
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text("Pagar ahora"),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          "¡Gracias por tu compra!",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
-                    
-                    // 📋 Sección de detalles adicionales (se expande cuando se selecciona método)
-                    if (method != null) ...[
-                      const SizedBox(height: 30),
-                      PaymentDetailsSection(
-                        paymentMethod: method,
-                        nicknameController: _nicknameController,
-                        selectedDocType: _selectedDocType,
-                        onDocTypeChanged: (newType) {
-                          setState(() => _selectedDocType = newType);
-                        },
-                        color: orange,
-                      ),
-                    ],
-                    
-                    const SizedBox(height: 40),
-                    
-                    // 🔄 Indicador de procesamiento o instrucciones
-                    if (method == PaymentMethod.card && !_isProcessing)
-                      Column(
-                        children: [
-                          Icon(Icons.contactless, size: 48, color: orange),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Acerca tu tarjeta o dispositivo NFC...",
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (method == PaymentMethod.cash && !_isProcessing)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Text(
-                          "Espera al cajero para finalizar tu pago.",
-                          style: TextStyle(
-                            color: Colors.grey[800],
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    
-                    if (_isProcessing)
-                      Column(
-                        children: [
-                          CircularProgressIndicator(color: orange),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "Procesando tu orden...",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    
-                    // ✅ Espacio adaptativo en lugar de Spacer()
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-                    
-                    // 🚀 Botón de pago
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: (method == null || _isProcessing)
-                            ? null
-                            : () => _processOrder(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: orange,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isProcessing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text("Pagar ahora"),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      "¡Gracias por tu compra!",
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ]
-                    )
                   );
                 },
               );
@@ -413,9 +419,9 @@ class PaymentDetailsSection extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 📄 Selección de tipo de documento
           const Text(
             "Tipo de comprobante",
@@ -426,7 +432,7 @@ class PaymentDetailsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -463,7 +469,7 @@ class PaymentDetailsSection extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // 💡 Información adicional
           const SizedBox(height: 16),
           Container(
@@ -547,11 +553,7 @@ class DocumentTypeCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: selected ? color : Colors.grey[600],
-              size: 24,
-            ),
+            Icon(icon, color: selected ? color : Colors.grey[600], size: 24),
             const SizedBox(height: 4),
             Text(
               label,

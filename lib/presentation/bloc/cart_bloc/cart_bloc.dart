@@ -68,7 +68,9 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   }
 }
 
-
+// =================================================================
+// 🎯 EXTENSION PARA CART BLOC - INTEGRACIÓN PERFECTA
+// =================================================================
 extension CartBlocOrderExtension on CartBloc {
   // 🚀 Procesar orden directamente desde el bloc
   Future<OrderResponseDto> processOrder({
@@ -82,6 +84,34 @@ extension CartBlocOrderExtension on CartBloc {
     String? comments,
   }) async {
     try {
+      log('🛒 PROCESANDO ORDEN DESDE CARTBLOC:');
+      log('   Items en carrito: ${state.items.length}');
+      log('   Customer: $customerName ($customerCode)');
+      log('   Device: $deviceCode');
+      log('   DocType: $docType');
+      log('   PaidType: $paidType');
+
+      // 🔍 DETALLES DE ITEMS DEL CARRITO
+      for (int i = 0; i < state.items.length; i++) {
+        final item = state.items[i];
+        log('   Item $i:');
+        log('     - Product Code: ${item.product.itemCode}');
+        log('     - Product Name: ${item.product.itemName}');
+        log('     - Quantity: ${item.quantity}');
+        log('     - Base Price: ${item.product.price}');
+        log('     - Discount: ${item.product.discount}');
+        log('     - Accompaniments: ${item.accompaniments.length}');
+
+        // Detalles de acompañamientos
+        if (item.accompaniments.isNotEmpty) {
+          for (var acc in item.accompaniments) {
+            log('       Acompañamiento: ${acc.toString()}');
+          }
+        }
+      }
+
+      log('   Total del carrito: ${state.subtotal}');
+
       final orderResponse = await orderRepository.createOrderFromCart(
         cartItems: state.items,
         customerCode: customerCode,
@@ -95,10 +125,13 @@ extension CartBlocOrderExtension on CartBloc {
 
       // Si la orden fue exitosa, limpiar el carrito
       add(ClearCart());
-      
+
       return orderResponse;
     } catch (e) {
       log('❌ CartBloc - Error procesando orden: $e');
+      log(
+        '❌ Error stackTrace: ${e is Exception ? e.toString() : 'No stack trace'}',
+      );
       rethrow;
     }
   }
@@ -110,18 +143,25 @@ extension CartBlocOrderExtension on CartBloc {
   Map<String, dynamic> get orderSummary {
     return {
       'itemCount': state.items.length,
-      'totalQuantity': state.items.fold<int>(0, (sum, item) => sum + item.quantity),
+      'totalQuantity': state.items.fold<int>(
+        0,
+        (sum, item) => sum + item.quantity,
+      ),
       'totalAmount': cartTotal,
       'hasItems': state.items.isNotEmpty,
-      'itemDetails': state.items.map((item) => {
-        'itemCode': item.product.itemCode,
-        'itemName': item.product.itemName,
-        'quantity': item.quantity,
-        'basePrice': item.product.price,
-        'discount': item.product.discount,
-        'accompanimentCount': item.accompaniments.length,
-        'ingredientCount': item.ingredients.length,
-      }).toList(),
+      'itemDetails': state.items
+          .map(
+            (item) => {
+              'itemCode': item.product.itemCode,
+              'itemName': item.product.itemName,
+              'quantity': item.quantity,
+              'basePrice': item.product.price,
+              'discount': item.product.discount,
+              'accompanimentCount': item.accompaniments.length,
+              'ingredientCount': item.ingredients.length,
+            },
+          )
+          .toList(),
     };
   }
 }

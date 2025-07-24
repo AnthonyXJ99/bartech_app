@@ -1,6 +1,6 @@
-// 📝 ORDER LINE CREATE DTO (Para enviar)
 import 'package:bartech_app/data/models/cart_item.dart';
 
+// 📝 ORDER LINE CREATE DTO (Para enviar)
 class DocumentLineCreateDto {
   final String itemCode;
   final String itemName;
@@ -30,7 +30,7 @@ class DocumentLineCreateDto {
     'lineTotal': lineTotal,
   };
 
-  // 🎯 Factory desde CartItem
+  // 🎯 Factory desde CartItem - Solo producto base
   factory DocumentLineCreateDto.fromCartItem(CartItem cartItem) {
     final product = cartItem.product;
     double basePrice = product.price;
@@ -40,24 +40,82 @@ class DocumentLineCreateDto {
       basePrice = basePrice - (basePrice * (product.discount! / 100));
     }
 
-    // Calcular precio con acompañamientos
-    double accompanimentTotal = 0;
-    for (var acc in cartItem.accompaniments) {
-      final accQuantity = (acc['quantity'] as num?)?.toDouble() ?? 1.0;
-      final accPrice = (acc['price'] as num?)?.toDouble() ?? 0.0;
-      accompanimentTotal += accQuantity * accPrice;
-    }
-
-    final unitPrice = basePrice + accompanimentTotal;
-    final lineTotal = unitPrice * cartItem.quantity;
+    // ✅ NO agregar acompañamientos aquí - van como líneas separadas
+    final lineTotal = basePrice * cartItem.quantity;
 
     return DocumentLineCreateDto(
       itemCode: product.itemCode ?? '',
       itemName: product.itemName,
       quantity: cartItem.quantity.toDouble(),
-      price: unitPrice,
-      lineStatus: 'A', // A = Active
-      taxCode: 'IGV18', // Configurable según tu negocio
+      price: basePrice,
+      lineStatus: 'A',
+      taxCode: 'IGV18',
+      lineTotal: lineTotal,
+    );
+  }
+
+  // 🎯 Factory para acompañamientos como líneas separadas
+  factory DocumentLineCreateDto.fromAccompaniment(
+    Map<String, dynamic> accompaniment,
+    int parentQuantity,
+  ) {
+    // 🔧 Acceso robusto al itemCode - prueba múltiples campos
+    String itemCode = '';
+
+    // Intentar diferentes formas de acceder al itemCode
+    if (accompaniment['itemCode'] != null) {
+      itemCode = accompaniment['itemCode'].toString();
+    } else if (accompaniment['ItemCode'] != null) {
+      itemCode = accompaniment['ItemCode'].toString();
+    } else if (accompaniment['item_code'] != null) {
+      itemCode = accompaniment['item_code'].toString();
+    }
+
+    // Si aún está vacío, generar uno automático
+    if (itemCode.isEmpty) {
+      final name =
+          accompaniment['itemName']?.toString() ??
+          accompaniment['name']?.toString() ??
+          'ACC';
+      final cleanName = name
+          .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')
+          .toUpperCase();
+      itemCode = 'ACC_$cleanName';
+    }
+
+    // 🔧 Acceso robusto al itemName
+    final itemName =
+        accompaniment['itemName']?.toString() ??
+        accompaniment['name']?.toString() ??
+        accompaniment['ItemName']?.toString() ??
+        'Acompañamiento';
+
+    // 🔧 Acceso robusto al price
+    final price =
+        (accompaniment['price'] as num?)?.toDouble() ??
+        (accompaniment['Price'] as num?)?.toDouble() ??
+        0.0;
+
+    final accQuantity = (accompaniment['quantity'] as num?)?.toDouble() ?? 1.0;
+
+    // Log para debug
+    print('🔍 Acompañamiento procesado:');
+    print('   Raw data: $accompaniment');
+    print('   ItemCode extraído: $itemCode');
+    print('   ItemName extraído: $itemName');
+    print('   Price extraído: $price');
+
+    // Cantidad total = cantidad del acompañamiento * cantidad del producto padre
+    final totalQuantity = accQuantity * parentQuantity;
+    final lineTotal = price * totalQuantity;
+
+    return DocumentLineCreateDto(
+      itemCode: itemCode,
+      itemName: itemName,
+      quantity: totalQuantity,
+      price: price,
+      lineStatus: 'A',
+      taxCode: 'IGV18',
       lineTotal: lineTotal,
     );
   }
