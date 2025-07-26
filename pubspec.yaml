@@ -28,6 +28,12 @@ dependencies:
 
   # Agregar cached_network_image
   cached_network_image: ^3.3.1
+  
+  # Para configuración del servidor
+  shared_preferences: ^2.2.2
+  
+  # Para reiniciar la app automáticamente
+  restart_app: ^1.2.1
 
 dev_dependencies:
   build_runner: ^2.4.7

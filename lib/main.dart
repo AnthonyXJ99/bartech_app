@@ -14,6 +14,8 @@ import 'package:bartech_app/data/services/product_groups_service.dart';
 import 'package:bartech_app/data/services/products_service.dart';
 // 🚀 NUEVO: Order service import
 import 'package:bartech_app/data/services/order_service.dart';
+// 🔧 Server configuration service
+import 'package:bartech_app/data/services/server_config_service.dart';
 import 'package:bartech_app/presentation/bloc/Inactivity_bloc/inactivity_bloc.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/details_bloc/details_bloc.dart';
@@ -33,6 +35,9 @@ void main() async {
   // Inicializar Drift en lugar de Isar
   final database = AppDatabase();
 
+  // 🔧 Cargar configuración del servidor desde SharedPreferences
+  final serverBaseUrl = await ServerConfigService.instance.getBaseUrl();
+
   runApp(
     MultiProvider(
       providers: [
@@ -40,7 +45,7 @@ void main() async {
         Provider<Dio>(
           create: (_) => Dio(
             BaseOptions(
-              baseUrl: 'http://192.168.20.10:9095/',
+              baseUrl: serverBaseUrl,
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
             ),

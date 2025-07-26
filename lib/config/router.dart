@@ -4,6 +4,7 @@ import 'package:bartech_app/presentation/screens/details/details_screen.dart';
 import 'package:bartech_app/presentation/screens/home/home_screen.dart';
 import 'package:bartech_app/presentation/screens/inactivity_wrapper_screen.dart';
 import 'package:bartech_app/presentation/screens/payment/payment_screen.dart';
+import 'package:bartech_app/presentation/screens/server_config/server_config_screen.dart';
 import 'package:bartech_app/presentation/screens/welcome/welcome_screen.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,6 +14,12 @@ final appRouter = GoRouter(
     GoRoute(path: "/", redirect: (context, state) => "/welcome"),
 
     GoRoute(path: "/welcome", builder: (context, state) => WelcomeScreen()),
+
+    // Ruta para configuración del servidor (solo accesible desde WelcomeScreen)
+    GoRoute(
+      path: "/server-config",
+      builder: (context, state) => const ServerConfigScreen(),
+    ),
 
     GoRoute(
       path: "/home",
