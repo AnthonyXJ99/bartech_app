@@ -30,6 +30,12 @@ class ProductCustomizeBloc
       emit(state.copyWith(accompaniments: updated));
     });
 
+    on<ToggleAccompanimentEnlargement>((event, emit) {
+      final updated = List<Map<String, dynamic>>.from(state.accompaniments);
+      updated[event.index]["isEnlarged"] = !updated[event.index]["isEnlarged"];
+      emit(state.copyWith(accompaniments: updated));
+    });
+
     on<ToggleAccompanimentsPanel>((event, emit) {
       emit(state.copyWith(showAccompaniments: !state.showAccompaniments));
     });

@@ -297,8 +297,15 @@ class _DetailsViewState extends State<DetailsView> {
                       );
                     }
 
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final sidebarWidth = screenWidth > 1000 
+                        ? screenWidth * 0.18  // 18% en desktop
+                        : screenWidth > 700 
+                            ? screenWidth * 0.20  // 20% en tablet
+                            : screenWidth * 0.25; // 25% en mobile
+                    
                     return Container(
-                      width: MediaQuery.of(context).size.width * 0.25,
+                      width: sidebarWidth,
                       color: Colors.white,
                       child: LayoutBuilder(
                         builder: (context, constraints) {
@@ -371,13 +378,27 @@ class _DetailsViewState extends State<DetailsView> {
                         // Muestra productos en grilla
                         return LayoutBuilder(
                           builder: (context, constraints) {
-                            int crossAxisCount = constraints.maxWidth > 1100
-                                ? 4
-                                : constraints.maxWidth > 700
-                                ? 3
-                                : constraints.maxWidth > 450
-                                ? 2
-                                : 1;
+                            // Grid optimizado para tablet y desktop
+                            int crossAxisCount;
+                            double cardAspectRatio;
+                            
+                            if (constraints.maxWidth > 1000) {
+                              // Desktop: 4 columnas
+                              crossAxisCount = 4;
+                              cardAspectRatio = 0.75;
+                            } else if (constraints.maxWidth > 700) {
+                              // Tablet: 3 columnas - CLAVE para la mejora
+                              crossAxisCount = 3;
+                              cardAspectRatio = 0.8;
+                            } else if (constraints.maxWidth > 500) {
+                              // Tablet pequeño: 2 columnas
+                              crossAxisCount = 2;
+                              cardAspectRatio = 0.9;
+                            } else {
+                              // Mobile: 1 columna
+                              crossAxisCount = 1;
+                              cardAspectRatio = 1.1;
+                            }
 
                             return GridView.builder(
                               key: ValueKey(
@@ -388,11 +409,9 @@ class _DetailsViewState extends State<DetailsView> {
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: crossAxisCount,
-                                    childAspectRatio: _calculateAspectRatio(
-                                      constraints,
-                                    ),
-                                    crossAxisSpacing: 20.0,
-                                    mainAxisSpacing: 20.0,
+                                    childAspectRatio: cardAspectRatio,
+                                    crossAxisSpacing: constraints.maxWidth > 700 ? 20.0 : 16.0,
+                                    mainAxisSpacing: constraints.maxWidth > 700 ? 24.0 : 20.0,
                                   ),
                               itemCount: products.length,
                               itemBuilder: (context, index) {
@@ -492,13 +511,29 @@ class _ProductCardState extends State<_ProductCard> {
     final buttonSize = screenWidth < 370 ? 26.0 : 36.0;
     final badgeFont = screenWidth < 370 ? 9.0 : 10.0;
 
-    return Material(
-      color: Colors.white,
-      elevation: 2,
-      borderRadius: BorderRadius.circular(16),
-      shadowColor: Colors.black12,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            spreadRadius: 1,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            spreadRadius: 0,
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
         onTap: () {
           showDialog(
             context: context,
@@ -511,178 +546,253 @@ class _ProductCardState extends State<_ProductCard> {
             ),
           );
         },
-        child: Padding(
-          padding: EdgeInsets.all(screenWidth < 370 ? 8 : 13),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: SizedBox(
-                      height: imageSize,
-                      width: imageSize,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: _buildProductImage(product.imageUrl),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: screenWidth < 370 ? 6 : 12),
-                  Text(
-                    product.itemName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: fontTitle,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: screenWidth < 370 ? 3 : 6),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.timer,
-                        size: iconSize,
-                        color: Colors.grey[500],
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        "${product.waitingTime ?? "0"} min",
-                        style: TextStyle(
-                          fontSize: iconSize - 1,
-                          color: Colors.grey[700],
+          child: Padding(
+            padding: EdgeInsets.all(screenWidth > 700 ? 20 : 16),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Imagen del producto con mejor proporción
+                    Expanded(
+                      flex: screenWidth > 700 ? 4 : 3, // Más espacio para imagen en tablet
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildProductImage(product.imageUrl),
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.star, color: Colors.amber, size: iconSize),
-                      Text(
-                        product.rating?.toStringAsFixed(1) ?? "0.0",
-                        style: TextStyle(
-                          fontSize: iconSize - 1,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: screenWidth < 370 ? 5 : 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Si hay descuento, mostramos el precio original tachado y el precio con descuento
-                      Flexible(
-                        child: (product.discount ?? 0) > 0
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    "CLP \$${(product.price).toStringAsFixed(0)}",
-                                    style: TextStyle(
-                                      fontSize: fontPrice - 4,
-                                      color: Colors.grey,
-                                      decoration: TextDecoration.lineThrough,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    "CLP \$${(product.price - (product.discount ?? 0)).toStringAsFixed(0)}",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: fontPrice,
-                                      color: const Color(0xFFFBA63C),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Text(
-                                "CLP \$${product.price.toStringAsFixed(0)}",
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Información del producto compacta
+                    Expanded(
+                      flex: screenWidth > 700 ? 3 : 2, // Menos espacio para texto en tablet
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Título del producto responsivo
+                          Text(
+                            product.itemName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: screenWidth > 700 ? 15 : screenWidth > 500 ? 14 : 13,
+                              color: Colors.black87,
+                              height: 1.2,
+                            ),
+                            maxLines: screenWidth > 700 ? 2 : 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          
+                          // Rating y tiempo
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "${product.waitingTime ?? "0"}min",
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: fontPrice,
-                                  color: const Color(0xFFFBA63C),
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
                                 ),
                               ),
-                      ),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: isAdding
-                            ? SizedBox(
-                                width: buttonSize,
-                                height: buttonSize,
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
+                              const SizedBox(width: 12),
+                              Icon(
+                                Icons.star_rounded,
+                                size: 14,
+                                color: Colors.amber[600],
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                product.rating?.toStringAsFixed(1) ?? "0.0",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              )
-                            : SizedBox(
-                                width: buttonSize,
-                                height: buttonSize,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    setState(() => isAdding = true);
-                                    await Future.delayed(
-                                      const Duration(milliseconds: 700),
-                                    );
-
-                                    setState(() => isAdding = false);
-                                    // ignore: use_build_context_synchronously
-                                    context.read<CartBloc>().add(
-                                      AddToCart(CartItem(product: product)),
-                                    );
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '${product.itemName} agregado al Pedido',
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          // Precios y botón mejorados
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Precios con mejor jerarquía visual
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if ((product.discount ?? 0) > 0) ...[
+                                      Text(
+                                        "CLP \$${product.price.toStringAsFixed(0)}",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                          decoration: TextDecoration.lineThrough,
+                                          fontWeight: FontWeight.w400,
                                         ),
-                                        duration: const Duration(seconds: 1),
                                       ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    shape: const CircleBorder(),
-                                    padding: EdgeInsets.zero,
-                                    backgroundColor: Colors.orange,
-                                    foregroundColor: Colors.white,
-                                    elevation: 2,
-                                  ),
-                                  child: Icon(
-                                    Icons.shopping_cart,
-                                    size: iconSize + 4,
-                                  ),
+                                      const SizedBox(height: 2),
+                                    ],
+                                    Text(
+                                      "CLP \$${((product.discount ?? 0) > 0 ? (product.price - (product.discount ?? 0)) : product.price).toStringAsFixed(0)}",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: screenWidth > 700 ? 16 : screenWidth > 500 ? 15 : 14,
+                                        color: const Color(0xFFFBA63C),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              // Botón de agregar mejorado
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: 40,
+                                height: 40,
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: isAdding
+                                      ? Container(
+                                          key: const ValueKey('loading'),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange[100],
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Center(
+                                            child: SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Material(
+                                          key: const ValueKey('button'),
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(20),
+                                            onTap: () async {
+                                              setState(() => isAdding = true);
+                                              await Future.delayed(
+                                                const Duration(milliseconds: 700),
+                                              );
+                                              setState(() => isAdding = false);
+                                              // ignore: use_build_context_synchronously
+                                              context.read<CartBloc>().add(
+                                                AddToCart(CartItem(product: product)),
+                                              );
+                                              // ignore: use_build_context_synchronously
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    '${product.itemName} agregado al Pedido',
+                                                  ),
+                                                  duration: const Duration(seconds: 1),
+                                                  backgroundColor: Colors.green[600],
+                                                  behavior: SnackBarBehavior.floating,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.orange[400]!,
+                                                    Colors.orange[600]!,
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.orange.withOpacity(0.3),
+                                                    spreadRadius: 1,
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.add,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              if (product.discount != 0)
-                Positioned(
-                  left: -3,
-                  top: -3,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      borderRadius: BorderRadius.circular(11),
                     ),
-                    child: Text(
-                      "OFERTA",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: badgeFont,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
-            ],
+                
+                // Badge de oferta mejorado
+                if ((product.discount ?? 0) > 0)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.red[500]!,
+                            Colors.red[700]!,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        "OFERTA",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

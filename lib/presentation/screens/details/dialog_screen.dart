@@ -42,6 +42,10 @@ class DialogScreen extends StatelessWidget {
             "icon": getIconForName(acc.accompanimentItemName),
             "quantity": 0,
             "price": acc.accompanimentPrice,
+            "discount": acc.discount,
+            "enlargementItemCode": acc.enlargementItemCode,
+            "enlargementDiscount": acc.enlargementDiscount,
+            "isEnlarged": false, // Estado para controlar si está agrandado
           },
         )
         .toList();
@@ -70,22 +74,50 @@ class _DialogScreenContent extends StatelessWidget {
     required this.categoryAccompaniments,
   });
 
-  Widget _buildProductImage(String? imageUrl) {
+  double _getDialogWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 1200) return screenWidth * 0.4; // Desktop: 40%
+    if (screenWidth > 800) return screenWidth * 0.6;  // Tablet: 60%
+    if (screenWidth > 600) return screenWidth * 0.8;  // Tablet pequeño: 80%
+    return screenWidth * 0.95; // Mobile: 95%
+  }
+
+  double _getDialogHeight(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return screenHeight * 0.85; // Máximo 85% de altura
+  }
+
+  double _getDialogMargin(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 800) return 20;
+    return 10;
+  }
+
+  Widget _buildProductImage(BuildContext context, String? imageUrl) {
     final validatedUrl = validateImageUrl(imageUrl);
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Responsive image sizing
+    double imageWidth = screenWidth > 1200 ? 280 : (screenWidth > 800 ? 240 : 200);
+    double imageHeight = screenWidth > 1200 ? 220 : (screenWidth > 800 ? 180 : 150);
 
     if (validatedUrl != null) {
       return CachedNetworkImage(
         imageUrl: validatedUrl,
-        width: 210,
-        height: 160,
+        width: imageWidth,
+        height: imageHeight,
         fit: BoxFit.contain,
         placeholder: (context, url) => Container(
+          width: imageWidth,
+          height: imageHeight,
           color: Colors.grey[300],
           child: const Center(child: CircularProgressIndicator()),
         ),
         errorWidget: (context, url, error) {
           return Image.asset(
             "assets/products/no_image.png",
+            width: imageWidth,
+            height: imageHeight,
             fit: BoxFit.contain,
           );
         },
@@ -93,8 +125,8 @@ class _DialogScreenContent extends StatelessWidget {
     } else {
       return Image.asset(
         "assets/products/no_image.png",
-        width: 210,
-        height: 160,
+        width: imageWidth,
+        height: imageHeight,
         fit: BoxFit.contain,
       );
     }
@@ -107,12 +139,26 @@ class _DialogScreenContent extends StatelessWidget {
       insetPadding: EdgeInsets.zero,
       child: Center(
         child: Container(
-          width: MediaQuery.of(context).size.width < 500
-              ? double.infinity
-              : 450,
+          width: _getDialogWidth(context),
+          height: _getDialogHeight(context),
+          margin: EdgeInsets.all(_getDialogMargin(context)),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                spreadRadius: 0,
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                spreadRadius: 0,
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
           child: BlocBuilder<ProductCustomizeBloc, ProductCustomizeState>(
             builder: (context, state) {
@@ -121,8 +167,17 @@ class _DialogScreenContent extends StatelessWidget {
                 sum,
                 acc,
               ) {
-                return sum +
-                    (acc["quantity"] as int) * (acc["price"] as double);
+                double basePrice = acc["price"] as double;
+                int quantity = acc["quantity"] as int;
+                bool isEnlarged = acc["isEnlarged"] as bool;
+                
+                // Si está agrandado, aplicar el descuento de agrandado
+                if (isEnlarged && acc["enlargementItemCode"] != null && acc["enlargementItemCode"] != '') {
+                  double enlargementDiscount = acc["enlargementDiscount"] as double;
+                  basePrice = basePrice - enlargementDiscount;
+                }
+                
+                return sum + (quantity * basePrice);
               });
 
               final double priceWithDiscount =
@@ -134,17 +189,32 @@ class _DialogScreenContent extends StatelessWidget {
               final hasIngredients = state.ingredients.isNotEmpty;
               final hasAccompaniments = state.accompaniments.isNotEmpty;
 
-              return SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Barra superior (back)
-                      Row(
+              return Column(
+                children: [
+                  // Header fijo
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          offset: const Offset(0, 2),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        MediaQuery.of(context).size.width > 800 ? 28 : 20,
+                        MediaQuery.of(context).size.width > 800 ? 20 : 16,
+                        MediaQuery.of(context).size.width > 800 ? 28 : 20,
+                        12,
+                      ),
+                      child: Row(
                         children: [
                           IconButton(
                             icon: const Icon(
@@ -156,15 +226,29 @@ class _DialogScreenContent extends StatelessWidget {
                           const Spacer(),
                         ],
                       ),
-                      // Imagen flotante
+                    ),
+                  ),
+                  
+                  // Contenido scrolleable
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.width > 800 ? 28 : 20,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(height: MediaQuery.of(context).size.width > 800 ? 16 : 12),
+                            // Imagen flotante
                       Hero(
                         tag: product.imageUrl ?? "product_image",
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: _buildProductImage(product.imageUrl),
+                          child: _buildProductImage(context, product.imageUrl),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: MediaQuery.of(context).size.width > 800 ? 18 : 12),
                       // Nombre, rating y cantidad
                       Row(
                         children: [
@@ -192,10 +276,11 @@ class _DialogScreenContent extends StatelessWidget {
                                 const SizedBox(height: 3),
                                 Text(
                                   product.itemName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.black,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 22,
+                                    fontSize: MediaQuery.of(context).size.width > 800 ? 26 : 22,
+                                    height: 1.2,
                                   ),
                                 ),
                               ],
@@ -204,13 +289,21 @@ class _DialogScreenContent extends StatelessWidget {
                           // Contador de cantidad
                           Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF3F3F3),
-                              borderRadius: BorderRadius.circular(18),
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.12),
+                                width: 1,
+                              ),
                             ),
                             child: Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.remove, size: 20),
+                                  icon: Icon(
+                                    Icons.remove,
+                                    size: 20,
+                                    color: state.quantity > 1 ? Colors.grey[700] : Colors.grey[400],
+                                  ),
                                   onPressed: () {
                                     if (state.quantity > 1) {
                                       context.read<ProductCustomizeBloc>().add(
@@ -227,7 +320,11 @@ class _DialogScreenContent extends StatelessWidget {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.add, size: 20),
+                                  icon: Icon(
+                                    Icons.add,
+                                    size: 20,
+                                    color: Colors.orange[600],
+                                  ),
                                   onPressed: () {
                                     context.read<ProductCustomizeBloc>().add(
                                       SetProductQuantity(state.quantity + 1),
@@ -275,7 +372,7 @@ class _DialogScreenContent extends StatelessWidget {
                               ),
                       ),
 
-                      const SizedBox(height: 22),
+                      SizedBox(height: MediaQuery.of(context).size.width > 800 ? 28 : 22),
                       // Descripción
                       Align(
                         alignment: Alignment.centerLeft,
@@ -283,26 +380,28 @@ class _DialogScreenContent extends StatelessWidget {
                           "Descripción",
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 16,
+                            fontSize: MediaQuery.of(context).size.width > 800 ? 18 : 16,
                             color: Colors.grey[800],
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: MediaQuery.of(context).size.width > 800 ? 10 : 8),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
                           product.description.toString(),
-                          style: const TextStyle(
-                            color: Colors.black45,
-                            fontSize: 14,
-                            height: 1.4,
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: MediaQuery.of(context).size.width > 800 ? 16 : 14,
+                            height: 1.5,
+                            letterSpacing: 0.2,
                           ),
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: MediaQuery.of(context).size.width > 800 ? 20 : 16),
                       // Ingredientes
                       if (hasIngredients) ...[
                         Align(
@@ -311,14 +410,15 @@ class _DialogScreenContent extends StatelessWidget {
                             "Ingredientes",
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                              fontSize: MediaQuery.of(context).size.width > 800 ? 18 : 16,
                               color: Colors.grey[800],
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: MediaQuery.of(context).size.width > 800 ? 10 : 8),
                         SizedBox(
-                          height: 90,
+                          height: MediaQuery.of(context).size.width > 800 ? 105 : 90,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: state.ingredients.length,
@@ -345,7 +445,7 @@ class _DialogScreenContent extends StatelessWidget {
                             },
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: MediaQuery.of(context).size.width > 800 ? 22 : 18),
                       ],
                       // Botón para expandir acompañamientos
                       if (hasAccompaniments) ...[
@@ -361,8 +461,9 @@ class _DialogScreenContent extends StatelessWidget {
                                   "Acompañamientos",
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 16,
+                                    fontSize: MediaQuery.of(context).size.width > 800 ? 18 : 16,
                                     color: Colors.grey[800],
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
                                 Icon(
@@ -384,22 +485,52 @@ class _DialogScreenContent extends StatelessWidget {
                           firstChild: AccompanimentList(),
                           secondChild: const SizedBox.shrink(),
                         ),
-                        const SizedBox(height: 10),
+                        SizedBox(height: MediaQuery.of(context).size.width > 800 ? 16 : 12),
                       ],
-                      // Precio y botón de agregar al carrito
-                      Row(
+                            SizedBox(height: MediaQuery.of(context).size.width > 800 ? 24 : 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Footer fijo con precio y botón
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(28),
+                        bottomRight: Radius.circular(28),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          offset: const Offset(0, -2),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        MediaQuery.of(context).size.width > 800 ? 28 : 20,
+                        16,
+                        MediaQuery.of(context).size.width > 800 ? 28 : 20,
+                        MediaQuery.of(context).size.width > 800 ? 20 : 16,
+                      ),
+                      child: Row(
                         children: [
                           Text(
                             "CLP \$${total.toStringAsFixed(0)}",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 23,
-                              color: Colors.black,
+                              fontSize: MediaQuery.of(context).size.width > 800 ? 28 : 24,
+                              color: Colors.grey[900],
+                              letterSpacing: 0.5,
                             ),
                           ),
                           const Spacer(),
                           SizedBox(
-                            height: 48,
+                            height: MediaQuery.of(context).size.width > 800 ? 56 : 50,
                             child: ElevatedButton(
                               onPressed: () {
                                 final itemCart = CartItem(
@@ -417,35 +548,44 @@ class _DialogScreenContent extends StatelessWidget {
                                     content: Text(
                                       '${product.itemName} agregado al Pedido',
                                     ),
-                                    duration: const Duration(seconds: 1),
+                                    backgroundColor: Colors.green[600],
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    duration: const Duration(seconds: 2),
                                   ),
                                 );
                                 context.pop();
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange,
+                                backgroundColor: const Color(0xFFF57C00),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 34,
-                                  vertical: 10,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: MediaQuery.of(context).size.width > 800 ? 40 : 32,
+                                  vertical: 12,
                                 ),
-                                elevation: 0,
+                                elevation: 2,
+                                shadowColor: Colors.orange.withOpacity(0.3),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "Agregar Pedido",
-                                style: TextStyle(fontSize: 16),
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width > 800 ? 18 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               );
             },
           ),

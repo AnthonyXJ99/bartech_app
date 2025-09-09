@@ -19,4 +19,9 @@ class SetAccompanimentQuantity extends ProductCustomizeEvent {
   SetAccompanimentQuantity({required this.index, required this.quantity});
 }
 
+class ToggleAccompanimentEnlargement extends ProductCustomizeEvent {
+  final int index;
+  ToggleAccompanimentEnlargement({required this.index});
+}
+
 class ToggleAccompanimentsPanel extends ProductCustomizeEvent {}
