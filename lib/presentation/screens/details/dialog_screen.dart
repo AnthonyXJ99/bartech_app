@@ -1,6 +1,7 @@
 import 'package:bartech_app/data/models/cart_item.dart';
 import 'package:bartech_app/data/models/product.dart';
 import 'package:bartech_app/data/models/category_accompaniment.dart';
+import 'package:bartech_app/data/repository/products_drift_repository.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_customize_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bartech_app/presentation/screens/util/icons_utils.dart';
+import 'package:provider/provider.dart';
 
 class DialogScreen extends StatelessWidget {
   const DialogScreen({
@@ -46,6 +48,8 @@ class DialogScreen extends StatelessWidget {
             "enlargementItemCode": acc.enlargementItemCode,
             "enlargementDiscount": acc.enlargementDiscount,
             "isEnlarged": false, // Estado para controlar si está agrandado
+            "originalName": acc.accompanimentItemName, // Guardar nombre original
+            "originalPrice": acc.accompanimentPrice, // Guardar precio original
           },
         )
         .toList();
@@ -54,9 +58,10 @@ class DialogScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => ProductCustomizeBloc(
+      create: (context) => ProductCustomizeBloc(
         ingredientsFromProduct,
         accompanimentsFromProduct,
+        context.read<ProductsDriftRepository>(),
       ),
       child: _DialogScreenContent(
         product: product,
@@ -160,24 +165,33 @@ class _DialogScreenContent extends StatelessWidget {
               ),
             ],
           ),
-          child: BlocBuilder<ProductCustomizeBloc, ProductCustomizeState>(
+          child: BlocConsumer<ProductCustomizeBloc, ProductCustomizeState>(
+            listener: (context, state) {
+              // Mostrar error si existe
+              if (state.errorMessage != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.errorMessage!),
+                    backgroundColor: Colors.red[600],
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
             builder: (context, state) {
               // Calcular el precio total
               double accompanimentsTotal = state.accompaniments.fold(0.0, (
                 sum,
                 acc,
               ) {
-                double basePrice = acc["price"] as double;
+                double price = acc["price"] as double;
                 int quantity = acc["quantity"] as int;
-                bool isEnlarged = acc["isEnlarged"] as bool;
                 
-                // Si está agrandado, aplicar el descuento de agrandado
-                if (isEnlarged && acc["enlargementItemCode"] != null && acc["enlargementItemCode"] != '') {
-                  double enlargementDiscount = acc["enlargementDiscount"] as double;
-                  basePrice = basePrice - enlargementDiscount;
-                }
-                
-                return sum + (quantity * basePrice);
+                return sum + (quantity * price);
               });
 
               final double priceWithDiscount =

@@ -29,6 +29,7 @@ class AccompanimentList extends StatelessWidget {
               final canEnlarge = acc["enlargementItemCode"] != null && 
                                 acc["enlargementItemCode"] != '';
               final isEnlarged = acc["isEnlarged"] as bool? ?? false;
+              final isLoading = state.loadingEnlargements.contains(index);
               
               return Container(
                 decoration: BoxDecoration(
@@ -108,22 +109,71 @@ class AccompanimentList extends StatelessWidget {
                                 ],
                               ],
                             ),
-                            // Botón de agrandar
+                            // Botón de agrandar/cambiar producto
                             if (canEnlarge) ...[
-                              const SizedBox(height: 6),
-                              GestureDetector(
-                                onTap: () {
-                                  context.read<ProductCustomizeBloc>().add(
-                                    ToggleAccompanimentEnlargement(index: index),
-                                  );
-                                },
-                                child: Text(
-                                  isEnlarged ? "Quitar agrandado" : "Agrandar (+descuento)",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isEnlarged ? Colors.red[600] : Colors.blue[600],
-                                    fontWeight: FontWeight.w500,
-                                    decoration: TextDecoration.underline,
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isEnlarged 
+                                    ? Colors.red.withOpacity(0.1)
+                                    : Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isEnlarged 
+                                      ? Colors.red.withOpacity(0.3)
+                                      : Colors.blue.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: GestureDetector(
+                                  onTap: isLoading ? null : () {
+                                    context.read<ProductCustomizeBloc>().add(
+                                      RequestAccompanimentEnlargement(index: index),
+                                    );
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isLoading) ...[
+                                        SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              Colors.blue[600]!,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                      ] else ...[
+                                        Icon(
+                                          isEnlarged ? Icons.undo : Icons.swap_horiz,
+                                          size: 14,
+                                          color: isEnlarged 
+                                            ? Colors.red[600]
+                                            : Colors.blue[600],
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      Flexible(
+                                        child: Text(
+                                          isLoading 
+                                            ? "Buscando variante..."
+                                            : (isEnlarged 
+                                                ? "Volver al original" 
+                                                : "Cambiar por tamaño grande"),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isLoading 
+                                              ? Colors.grey[600]
+                                              : (isEnlarged ? Colors.red[600] : Colors.blue[600]),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -224,17 +274,18 @@ class AccompanimentList extends StatelessWidget {
   }
 
   String _calculatePrice(Map<String, dynamic> acc) {
-    double basePrice = acc["price"] as double;
+    double currentPrice = acc["price"] as double;
     bool isEnlarged = acc["isEnlarged"] as bool? ?? false;
     
-    if (isEnlarged && acc["enlargementItemCode"] != null && acc["enlargementItemCode"] != '') {
-      double enlargementDiscount = acc["enlargementDiscount"] as double;
-      double finalPrice = basePrice - enlargementDiscount;
+    if (isEnlarged) {
+      double originalPrice = acc["originalPrice"] as double? ?? currentPrice;
       
-      // Mostrar precio original y precio con descuento
-      return "CLP \$${basePrice.toStringAsFixed(0)} → \$${finalPrice.toStringAsFixed(0)}";
+      // Mostrar precio original y precio nuevo (del producto de agrandado)
+      if (originalPrice != currentPrice) {
+        return "CLP \$${originalPrice.toStringAsFixed(0)} → \$${currentPrice.toStringAsFixed(0)}";
+      }
     }
     
-    return basePrice.toStringAsFixed(0);
+    return currentPrice.toStringAsFixed(0);
   }
 }

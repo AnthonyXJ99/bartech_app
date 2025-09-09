@@ -19,9 +19,20 @@ class SetAccompanimentQuantity extends ProductCustomizeEvent {
   SetAccompanimentQuantity({required this.index, required this.quantity});
 }
 
-class ToggleAccompanimentEnlargement extends ProductCustomizeEvent {
+class RequestAccompanimentEnlargement extends ProductCustomizeEvent {
   final int index;
-  ToggleAccompanimentEnlargement({required this.index});
+  RequestAccompanimentEnlargement({required this.index});
+}
+
+class SetAccompanimentEnlargement extends ProductCustomizeEvent {
+  final int index;
+  final Product? enlargementProduct;
+  final bool isEnlarged;
+  SetAccompanimentEnlargement({
+    required this.index, 
+    this.enlargementProduct,
+    required this.isEnlarged,
+  });
 }
 
 class ToggleAccompanimentsPanel extends ProductCustomizeEvent {}
