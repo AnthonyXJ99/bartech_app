@@ -503,7 +503,12 @@ class _ProductCardState extends State<_ProductCard> {
           showDialog(
             context: context,
             barrierDismissible: true,
-            builder: (_) => DialogScreen(product: product),
+            builder: (_) => BlocBuilder<DetailsBloc, DetailsState>(
+              builder: (context, state) => DialogScreen(
+                product: product,
+                categoryAccompaniments: state.categoryAccompaniments,
+              ),
+            ),
           );
         },
         child: Padding(

@@ -75,16 +75,23 @@ class DetailsBloc extends Bloc<DetailsEvent, DetailsState> {
         selectedCategory: event.category,
         error: '',
         products: [], // Limpiar productos anteriores inmediatamente
+        categoryAccompaniments: [], // Limpiar acompañamientos anteriores
       ),
     );
     try {
-      // ✅ Método actualizado para Drift - ya devuelve Product directamente
+      // Cargar productos de la categoría
       final products = await productsIsarRepository.getProductsByCategory(
         event.category.categoryItemCode,
       );
 
-      // ✅ Ya no necesitas convertir porque Drift ya devuelve el modelo correcto
-      emit(state.copyWith(products: products, isLoading: false));
+      // Usar los acompañamientos que ya vienen en la categoría
+      final accompaniments = event.category.accompaniments ?? [];
+
+      emit(state.copyWith(
+        products: products,
+        categoryAccompaniments: accompaniments,
+        isLoading: false,
+      ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: 'Error cargando productos'));
     }

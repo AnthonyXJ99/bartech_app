@@ -36,10 +36,37 @@ class ProductCategoryDriftRepository {
     });
   }
 
-  // Obtener todas las categorías
+  // Obtener todas las categorías con sus acompañamientos
   Future<List<ApiModels.ProductCategory>> getAllProductCategories() async {
     final categoryEntities = await _database.getAllProductCategories();
-    return categoryEntities.map((entity) => entity.toApiModel()).toList();
+    
+    List<ApiModels.ProductCategory> categoriesWithAccompaniments = [];
+    
+    for (final categoryEntity in categoryEntities) {
+      // Obtener acompañamientos de cada categoría
+      final relations = await _database.getCategoryWithAccompaniments(categoryEntity.id);
+      final accompanimentEntities = relations['accompaniments'] as List<CategoryAccompanimentEntity>;
+      
+      // Convertir a modelo de API con acompañamientos
+      final category = categoryEntity.toApiModel();
+      final categoryWithAccompaniments = ApiModels.ProductCategory(
+        categoryItemCode: category.categoryItemCode,
+        categoryItemName: category.categoryItemName,
+        enabled: category.enabled,
+        dataSource: category.dataSource,
+        visOrder: category.visOrder,
+        frgnName: category.frgnName,
+        imageUrl: category.imageUrl,
+        description: category.description,
+        frgnDescription: category.frgnDescription,
+        groupItemCode: category.groupItemCode,
+        accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+      );
+      
+      categoriesWithAccompaniments.add(categoryWithAccompaniments);
+    }
+    
+    return categoriesWithAccompaniments;
   }
 
   // Stream reactivo de categorías

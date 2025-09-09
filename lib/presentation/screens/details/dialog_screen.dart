@@ -1,5 +1,6 @@
 import 'package:bartech_app/data/models/cart_item.dart';
 import 'package:bartech_app/data/models/product.dart';
+import 'package:bartech_app/data/models/category_accompaniment.dart';
 import 'package:bartech_app/presentation/bloc/cart_bloc/cart_bloc.dart';
 import 'package:bartech_app/presentation/bloc/product_customize_bloc/product_customize_bloc.dart';
 import 'package:bartech_app/presentation/screens/details/component/acompanamiento_list.dart';
@@ -12,8 +13,13 @@ import 'package:go_router/go_router.dart';
 import 'package:bartech_app/presentation/screens/util/icons_utils.dart';
 
 class DialogScreen extends StatelessWidget {
-  const DialogScreen({super.key, required this.product});
+  const DialogScreen({
+    super.key, 
+    required this.product, 
+    required this.categoryAccompaniments,
+  });
   final Product product;
+  final List<CategoryAccompaniment> categoryAccompaniments;
 
   List<Map<String, dynamic>> get ingredientsFromProduct {
     return (product.material ?? [])
@@ -29,13 +35,13 @@ class DialogScreen extends StatelessWidget {
   }
 
   List<Map<String, dynamic>> get accompanimentsFromProduct {
-    return (product.accompaniment ?? [])
+    return categoryAccompaniments
         .map(
           (acc) => {
-            "name": acc.itemName ?? "Acompañamiento",
-            "icon": getIconForName(acc.itemName ?? ""),
+            "name": acc.accompanimentItemName,
+            "icon": getIconForName(acc.accompanimentItemName),
             "quantity": 0,
-            "price": acc.price,
+            "price": acc.accompanimentPrice,
           },
         )
         .toList();
@@ -48,14 +54,21 @@ class DialogScreen extends StatelessWidget {
         ingredientsFromProduct,
         accompanimentsFromProduct,
       ),
-      child: _DialogScreenContent(product: product),
+      child: _DialogScreenContent(
+        product: product,
+        categoryAccompaniments: categoryAccompaniments,
+      ),
     );
   }
 }
 
 class _DialogScreenContent extends StatelessWidget {
   final Product product;
-  const _DialogScreenContent({required this.product});
+  final List<CategoryAccompaniment> categoryAccompaniments;
+  const _DialogScreenContent({
+    required this.product,
+    required this.categoryAccompaniments,
+  });
 
   Widget _buildProductImage(String? imageUrl) {
     final validatedUrl = validateImageUrl(imageUrl);

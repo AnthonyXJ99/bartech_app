@@ -1,11 +1,13 @@
 import 'package:bartech_app/data/models/product.dart';
 import 'package:equatable/equatable.dart';
 import 'package:bartech_app/data/models/product_category.dart';
+import 'package:bartech_app/data/models/category_accompaniment.dart';
 
 class DetailsState extends Equatable {
   final List<Product> products;
-  final List<ProductCategory> categories; // <-- NUEVO
+  final List<ProductCategory> categories;
   final ProductCategory? selectedCategory;
+  final List<CategoryAccompaniment> categoryAccompaniments;
   final bool isLoading;
   final String error;
 
@@ -13,6 +15,7 @@ class DetailsState extends Equatable {
     this.categories = const [],
     this.selectedCategory,
     this.products = const [],
+    this.categoryAccompaniments = const [],
     this.isLoading = false,
     this.error = '',
   });
@@ -21,6 +24,7 @@ class DetailsState extends Equatable {
     List<ProductCategory>? categories,
     ProductCategory? selectedCategory,
     List<Product>? products,
+    List<CategoryAccompaniment>? categoryAccompaniments,
     bool? isLoading,
     String? error,
   }) {
@@ -28,6 +32,7 @@ class DetailsState extends Equatable {
       categories: categories ?? this.categories,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       products: products ?? this.products,
+      categoryAccompaniments: categoryAccompaniments ?? this.categoryAccompaniments,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? '',
     );
@@ -38,6 +43,7 @@ class DetailsState extends Equatable {
     categories,
     selectedCategory,
     products,
+    categoryAccompaniments,
     isLoading,
     error,
   ];
