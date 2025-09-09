@@ -191,7 +191,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          "\$${total.toStringAsFixed(2)}",
+                          "CLP \$${total.toStringAsFixed(0)}",
                           style: TextStyle(
                             color: orange,
                             fontWeight: FontWeight.bold,

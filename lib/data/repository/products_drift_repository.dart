@@ -16,18 +16,13 @@ class ProductsDriftRepository {
         final productId = await _database.insertProduct(productCompanion);
 
         // Insertar materiales y crear relaciones
-        for (final material in product.material!) {
+        for (final material in product.material ?? []) {
           final materialCompanion = DriftHelpers.productMaterialFromApi(material);
           final materialId = await _database.insertProductMaterial(materialCompanion);
           await _database.linkProductToMaterial(productId, materialId);
         }
 
-        // Insertar acompañamientos y crear relaciones
-        for (final accompaniment in product.accompaniment!) {
-          final accompanimentCompanion = DriftHelpers.productAccompanimentFromApi(accompaniment);
-          final accompanimentId = await _database.insertProductAccompaniment(accompanimentCompanion);
-          await _database.linkProductToAccompaniment(productId, accompanimentId);
-        }
+        // Los acompañamientos ahora están en las categorías, no en productos individuales
       }
     });
   }
@@ -40,15 +35,14 @@ class ProductsDriftRepository {
     List<ApiModels.Product> products = [];
 
     for (final productEntity in productEntities) {
-      // Obtener relaciones del producto
+      // Obtener relaciones del producto (solo materiales)
       final relations = await _database.getProductWithRelations(productEntity.id);
       final materialEntities = relations['materials'] as List<ProductMaterialEntity>;
-      final accompanimentEntities = relations['accompaniments'] as List<ProductAccompanimentEntity>;
 
-      // Convertir a modelo de API
+      // Convertir a modelo de API (sin acompañamientos)
       final product = productEntity.toApiModel(
         materials: materialEntities.map((e) => e.toApiModel()).toList(),
-        accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+        accompaniments: [], // Los acompañamientos están en las categorías
       );
 
       products.add(product);
@@ -64,20 +58,19 @@ class ProductsDriftRepository {
 
       for (final productEntity in productEntities) {
         try {
-          // Obtener relaciones del producto
+          // Obtener relaciones del producto (solo materiales)
           final relations = await _database.getProductWithRelations(productEntity.id);
           final materialEntities = relations['materials'] as List<ProductMaterialEntity>;
-          final accompanimentEntities = relations['accompaniments'] as List<ProductAccompanimentEntity>;
 
-          // Convertir a modelo de API
+          // Convertir a modelo de API (sin acompañamientos)
           final product = productEntity.toApiModel(
             materials: materialEntities.map((e) => e.toApiModel()).toList(),
-            accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+            accompaniments: [], // Los acompañamientos están en las categorías
           );
 
           products.add(product);
         } catch (e) {
-          // Si hay error obteniendo relaciones, crear producto sin relaciones
+          // Si hay error obteniendo relaciones, crear producto solo con materiales vacíos
           final product = productEntity.toApiModel(materials: [], accompaniments: []);
           products.add(product);
         }
@@ -107,11 +100,9 @@ class ProductsDriftRepository {
     await _database.transaction(() async {
       // Limpiar relaciones primero
       await _database.delete(_database.productMaterialRelations).go();
-      await _database.delete(_database.productAccompanimentRelations).go();
 
       // Luego limpiar tablas principales
       await _database.delete(_database.productMaterials).go();
-      await _database.delete(_database.productAccompaniments).go();
       await _database.delete(_database.products).go();
     });
   }
@@ -124,11 +115,10 @@ class ProductsDriftRepository {
 
       final relations = await _database.getProductWithRelations(productEntity.id);
       final materialEntities = relations['materials'] as List<ProductMaterialEntity>;
-      final accompanimentEntities = relations['accompaniments'] as List<ProductAccompanimentEntity>;
 
       return productEntity.toApiModel(
         materials: materialEntities.map((e) => e.toApiModel()).toList(),
-        accompaniments: accompanimentEntities.map((e) => e.toApiModel()).toList(),
+        accompaniments: [], // Los acompañamientos están en las categorías
       );
     } catch (e) {
       return null;

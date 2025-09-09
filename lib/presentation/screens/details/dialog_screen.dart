@@ -22,6 +22,7 @@ class DialogScreen extends StatelessWidget {
             "name": mat.itemName ?? "Ingrediente",
             "icon": getIconForName(mat.itemName ?? ""),
             "amount": 1,
+            "isCustomizable": mat.isCustomizable == "Y",
           },
         )
         .toList();
@@ -232,7 +233,7 @@ class _DialogScreenContent extends StatelessWidget {
                             ? Row(
                                 children: [
                                   Text(
-                                    "\$${product.price.toStringAsFixed(0)}",
+                                    "CLP \$${product.price.toStringAsFixed(0)}",
                                     style: const TextStyle(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.w600,
@@ -242,7 +243,7 @@ class _DialogScreenContent extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 7),
                                   Text(
-                                    "\$${(product.price - product.discount!).toStringAsFixed(0)}",
+                                    "CLP \$${(product.price - product.discount!).toStringAsFixed(0)}",
                                     style: const TextStyle(
                                       color: Color(0xFFFBA63C),
                                       fontWeight: FontWeight.bold,
@@ -252,7 +253,7 @@ class _DialogScreenContent extends StatelessWidget {
                                 ],
                               )
                             : Text(
-                                "\$${product.price.toStringAsFixed(0)}",
+                                "CLP \$${product.price.toStringAsFixed(0)}",
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 18,
@@ -316,13 +317,16 @@ class _DialogScreenContent extends StatelessWidget {
                                 name: ing["name"],
                                 icon: ing["icon"],
                                 amount: ing["amount"],
+                                isCustomizable: ing["isCustomizable"] ?? true,
                                 onChanged: (newAmount) {
-                                  context.read<ProductCustomizeBloc>().add(
-                                    SetIngredientAmount(
-                                      index: index,
-                                      amount: newAmount,
-                                    ),
-                                  );
+                                  if (ing["isCustomizable"] == true) {
+                                    context.read<ProductCustomizeBloc>().add(
+                                      SetIngredientAmount(
+                                        index: index,
+                                        amount: newAmount,
+                                      ),
+                                    );
+                                  }
                                 },
                               );
                             },
@@ -373,7 +377,7 @@ class _DialogScreenContent extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            "\$${total.toStringAsFixed(0)}",
+                            "CLP \$${total.toStringAsFixed(0)}",
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 23,

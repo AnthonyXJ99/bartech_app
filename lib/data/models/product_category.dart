@@ -1,3 +1,5 @@
+import 'category_accompaniment.dart';
+
 class ProductCategory {
   final String categoryItemCode;
   final String categoryItemName;
@@ -9,6 +11,7 @@ class ProductCategory {
   final String? description;
   final String? frgnDescription;
   final String? groupItemCode;
+  final List<CategoryAccompaniment>? accompaniments;
 
   ProductCategory({
     required this.categoryItemCode,
@@ -21,6 +24,7 @@ class ProductCategory {
     this.description,
     this.frgnDescription,
     this.groupItemCode,
+    this.accompaniments,
   });
 
   factory ProductCategory.fromJson(Map<String, dynamic> json) =>
@@ -35,6 +39,9 @@ class ProductCategory {
         description: json['description'],
         frgnDescription: json['frgnDescription'],
         groupItemCode: json['groupItemCode'],
+        accompaniments: (json['accompaniments'] as List?)
+            ?.map((e) => CategoryAccompaniment.fromJson(e))
+            .toList(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -48,5 +55,6 @@ class ProductCategory {
     'description': description,
     'frgnDescription': frgnDescription,
     'groupItemCode': groupItemCode,
+    'accompaniments': accompaniments?.map((e) => e.toJson()).toList(),
   };
 }

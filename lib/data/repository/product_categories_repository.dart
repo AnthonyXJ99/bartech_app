@@ -32,4 +32,8 @@ class ProductCategoriesRepository {
 
   Future<List<ProductCategory>> getCategoriesByGroup(String groupCode) =>
       _service.getByGroup(groupCode);
+
+  Future<List<ProductCategory>> getAllWithAccompaniments() async {
+    return await _service.getAllWithAccompaniments();
+  }
 }

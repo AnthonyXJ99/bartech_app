@@ -5,6 +5,7 @@ class ProductMaterial {
   final String? imageUrl;
   final String? isPrimary;
   final String? productItemCode;
+  final String? isCustomizable;
 
   ProductMaterial({
     required this.itemCode,
@@ -13,6 +14,7 @@ class ProductMaterial {
     this.imageUrl,
     this.isPrimary,
     this.productItemCode,
+    this.isCustomizable,
   });
 
   factory ProductMaterial.fromJson(Map<String, dynamic> json) =>
@@ -23,6 +25,7 @@ class ProductMaterial {
         imageUrl: json['imageUrl'],
         isPrimary: json['isPrimary'],
         productItemCode: json['productItemCode'],
+        isCustomizable: json['isCustomizable'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -32,6 +35,7 @@ class ProductMaterial {
     'imageUrl': imageUrl,
     'isPrimary': isPrimary,
     'productItemCode': productItemCode,
+    'isCustomizable': isCustomizable,
   };
 }
 

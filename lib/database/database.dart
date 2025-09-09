@@ -16,18 +16,22 @@ class ProductMaterials extends Table {
   TextColumn get imageUrl => text().nullable()();
   TextColumn get isPrimary => text().nullable()();
   TextColumn get productItemCode => text().nullable()();
+  TextColumn get isCustomizable => text().nullable()();
 }
 
-// Tabla para ProductAccompaniment (renombrada para evitar conflictos)
-@DataClassName('ProductAccompanimentEntity')
-class ProductAccompaniments extends Table {
+// Tabla para CategoryAccompaniment (nueva estructura)
+@DataClassName('CategoryAccompanimentEntity')
+class CategoryAccompaniments extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get itemCode => text()();
-  TextColumn get itemName => text().nullable()();
-  RealColumn get priceOld => real()();
-  RealColumn get price => real()();
-  TextColumn get imageUrl => text().nullable()();
-  TextColumn get productItemCode => text().nullable()();
+  IntColumn get lineNumber => integer()();
+  TextColumn get accompanimentItemCode => text()();
+  TextColumn get accompanimentItemName => text()();
+  TextColumn get accompanimentImageUrl => text().nullable()();
+  RealColumn get accompanimentPrice => real()();
+  RealColumn get discount => real()();
+  TextColumn get enlargementItemCode => text().nullable()();
+  RealColumn get enlargementDiscount => real()();
+  TextColumn get categoryItemCode => text().nullable()();
 }
 
 // Tabla para ProductCategory (renombrada para evitar conflictos)
@@ -77,27 +81,27 @@ class ProductMaterialRelations extends Table {
   Set<Column> get primaryKey => {productId, materialId};
 }
 
-class ProductAccompanimentRelations extends Table {
-  IntColumn get productId => integer().references(Products, #id)();
-  IntColumn get accompanimentId => integer().references(ProductAccompaniments, #id)();
+class CategoryAccompanimentRelations extends Table {
+  IntColumn get categoryId => integer().references(ProductCategories, #id)();
+  IntColumn get accompanimentId => integer().references(CategoryAccompaniments, #id)();
 
   @override
-  Set<Column> get primaryKey => {productId, accompanimentId};
+  Set<Column> get primaryKey => {categoryId, accompanimentId};
 }
 
 @DriftDatabase(tables: [
   Products,
   ProductMaterials,
-  ProductAccompaniments,
+  CategoryAccompaniments,
   ProductCategories,
   ProductMaterialRelations,
-  ProductAccompanimentRelations,
+  CategoryAccompanimentRelations,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   // Métodos para ProductMaterial
   Future<int> insertProductMaterial(ProductMaterialsCompanion material) async {
@@ -116,21 +120,21 @@ class AppDatabase extends _$AppDatabase {
     await (delete(productMaterials)..where((t) => t.id.equals(id))).go();
   }
 
-  // Métodos para ProductAccompaniment
-  Future<int> insertProductAccompaniment(ProductAccompanimentsCompanion accompaniment) async {
-    return await into(productAccompaniments).insert(accompaniment);
+  // Métodos para CategoryAccompaniment
+  Future<int> insertCategoryAccompaniment(CategoryAccompanimentsCompanion accompaniment) async {
+    return await into(categoryAccompaniments).insert(accompaniment);
   }
 
-  Future<List<ProductAccompanimentEntity>> getAllProductAccompaniments() async {
-    return await select(productAccompaniments).get();
+  Future<List<CategoryAccompanimentEntity>> getAllCategoryAccompaniments() async {
+    return await select(categoryAccompaniments).get();
   }
 
-  Stream<List<ProductAccompanimentEntity>> watchAllProductAccompaniments() {
-    return select(productAccompaniments).watch();
+  Stream<List<CategoryAccompanimentEntity>> watchAllCategoryAccompaniments() {
+    return select(categoryAccompaniments).watch();
   }
 
-  Future<void> deleteProductAccompaniment(int id) async {
-    await (delete(productAccompaniments)..where((t) => t.id.equals(id))).go();
+  Future<void> deleteCategoryAccompaniment(int id) async {
+    await (delete(categoryAccompaniments)..where((t) => t.id.equals(id))).go();
   }
 
   // Métodos para ProductCategory
@@ -177,16 +181,16 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> linkProductToAccompaniment(int productId, int accompanimentId) async {
-    await into(productAccompanimentRelations).insert(
-      ProductAccompanimentRelationsCompanion(
-        productId: Value(productId),
+  Future<void> linkCategoryToAccompaniment(int categoryId, int accompanimentId) async {
+    await into(categoryAccompanimentRelations).insert(
+      CategoryAccompanimentRelationsCompanion(
+        categoryId: Value(categoryId),
         accompanimentId: Value(accompanimentId),
       ),
     );
   }
 
-  // Consulta compleja: obtener producto con sus materiales y acompañamientos
+  // Consulta compleja: obtener producto con sus materiales
   Future<Map<String, dynamic>> getProductWithRelations(int productId) async {
     final product = await (select(products)..where((p) => p.id.equals(productId))).getSingle();
 
@@ -194,14 +198,23 @@ class AppDatabase extends _$AppDatabase {
       innerJoin(productMaterialRelations, productMaterialRelations.materialId.equalsExp(productMaterials.id))
     ])..where(productMaterialRelations.productId.equals(productId))).get();
 
-    final accompaniments = await (select(productAccompaniments).join([
-      innerJoin(productAccompanimentRelations, productAccompanimentRelations.accompanimentId.equalsExp(productAccompaniments.id))
-    ])..where(productAccompanimentRelations.productId.equals(productId))).get();
-
     return {
       'product': product,
       'materials': materials.map((row) => row.readTable(productMaterials)).toList(),
-      'accompaniments': accompaniments.map((row) => row.readTable(productAccompaniments)).toList(),
+    };
+  }
+
+  // Consulta compleja: obtener categoría con sus acompañamientos
+  Future<Map<String, dynamic>> getCategoryWithAccompaniments(int categoryId) async {
+    final category = await (select(productCategories)..where((c) => c.id.equals(categoryId))).getSingle();
+
+    final accompaniments = await (select(categoryAccompaniments).join([
+      innerJoin(categoryAccompanimentRelations, categoryAccompanimentRelations.accompanimentId.equalsExp(categoryAccompaniments.id))
+    ])..where(categoryAccompanimentRelations.categoryId.equals(categoryId))).get();
+
+    return {
+      'category': category,
+      'accompaniments': accompaniments.map((row) => row.readTable(categoryAccompaniments)).toList(),
     };
   }
 }

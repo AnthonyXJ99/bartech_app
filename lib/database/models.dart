@@ -3,6 +3,7 @@ import '../data/models/product_category.dart' as ApiModels;
 import 'database.dart';
 // Importa tus modelos existentes
 import '../data/models/product.dart' as ApiModels;
+import '../data/models/category_accompaniment.dart' as ApiModels;
 
 // Extensiones para facilitar la conversión desde las entidades de Drift a tus modelos existentes
 extension ProductMaterialEntityExtension on ProductMaterialEntity {
@@ -15,6 +16,7 @@ extension ProductMaterialEntityExtension on ProductMaterialEntity {
       imageUrl: imageUrl,
       isPrimary: isPrimary,
       productItemCode: productItemCode,
+      isCustomizable: isCustomizable,
     );
   }
 
@@ -25,29 +27,34 @@ extension ProductMaterialEntityExtension on ProductMaterialEntity {
     'imageUrl': imageUrl,
     'isPrimary': isPrimary,
     'productItemCode': productItemCode,
+    'isCustomizable': isCustomizable,
   };
 }
 
-extension ProductAccompanimentEntityExtension on ProductAccompanimentEntity {
+extension CategoryAccompanimentEntityExtension on CategoryAccompanimentEntity {
   // Convertir a tu modelo existente de API
-  ApiModels.ProductAccompaniment toApiModel() {
-    return ApiModels.ProductAccompaniment(
-      itemCode: itemCode,
-      itemName: itemName,
-      priceOld: priceOld,
-      price: price,
-      imageUrl: imageUrl,
-      productItemCode: productItemCode,
+  ApiModels.CategoryAccompaniment toApiModel() {
+    return ApiModels.CategoryAccompaniment(
+      lineNumber: lineNumber,
+      accompanimentItemCode: accompanimentItemCode,
+      accompanimentItemName: accompanimentItemName,
+      accompanimentImageUrl: accompanimentImageUrl,
+      accompanimentPrice: accompanimentPrice,
+      discount: discount,
+      enlargementItemCode: enlargementItemCode,
+      enlargementDiscount: enlargementDiscount,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'itemCode': itemCode,
-    'itemName': itemName,
-    'priceOld': priceOld,
-    'price': price,
-    'imageUrl': imageUrl,
-    'productItemCode': productItemCode,
+    'lineNumber': lineNumber,
+    'accompanimentItemCode': accompanimentItemCode,
+    'accompanimentItemName': accompanimentItemName,
+    'accompanimentImageUrl': accompanimentImageUrl,
+    'accompanimentPrice': accompanimentPrice,
+    'discount': discount,
+    'enlargementItemCode': enlargementItemCode,
+    'enlargementDiscount': enlargementDiscount,
   };
 }
 
@@ -141,17 +148,21 @@ class DriftHelpers {
       imageUrl: Value(json['imageUrl']),
       isPrimary: Value(json['isPrimary']),
       productItemCode: Value(json['productItemCode']),
+      isCustomizable: Value(json['isCustomizable']),
     );
   }
 
-  static ProductAccompanimentsCompanion productAccompanimentFromJson(Map<String, dynamic> json) {
-    return ProductAccompanimentsCompanion(
-      itemCode: Value(json['itemCode'] ?? ''),
-      itemName: Value(json['itemName']),
-      priceOld: Value((json['priceOld'] as num?)?.toDouble() ?? 0),
-      price: Value((json['price'] as num?)?.toDouble() ?? 0),
-      imageUrl: Value(json['imageUrl']),
-      productItemCode: Value(json['productItemCode']),
+  static CategoryAccompanimentsCompanion categoryAccompanimentFromJson(Map<String, dynamic> json) {
+    return CategoryAccompanimentsCompanion(
+      lineNumber: Value(json['lineNumber'] ?? 0),
+      accompanimentItemCode: Value(json['accompanimentItemCode'] ?? ''),
+      accompanimentItemName: Value(json['accompanimentItemName'] ?? ''),
+      accompanimentImageUrl: Value(json['accompanimentImageUrl']),
+      accompanimentPrice: Value((json['accompanimentPrice'] as num?)?.toDouble() ?? 0),
+      discount: Value((json['discount'] as num?)?.toDouble() ?? 0),
+      enlargementItemCode: Value(json['enlargementItemCode']),
+      enlargementDiscount: Value((json['enlargementDiscount'] as num?)?.toDouble() ?? 0),
+      categoryItemCode: Value(json['categoryItemCode']),
     );
   }
 
@@ -200,17 +211,21 @@ class DriftHelpers {
       imageUrl: Value(material.imageUrl),
       isPrimary: Value(material.isPrimary),
       productItemCode: Value(material.productItemCode),
+      isCustomizable: Value(material.isCustomizable),
     );
   }
 
-  static ProductAccompanimentsCompanion productAccompanimentFromApi(ApiModels.ProductAccompaniment accompaniment) {
-    return ProductAccompanimentsCompanion(
-      itemCode: Value(accompaniment.itemCode),
-      itemName: Value(accompaniment.itemName),
-      priceOld: Value(accompaniment.priceOld),
-      price: Value(accompaniment.price),
-      imageUrl: Value(accompaniment.imageUrl),
-      productItemCode: Value(accompaniment.productItemCode),
+  static CategoryAccompanimentsCompanion categoryAccompanimentFromApi(ApiModels.CategoryAccompaniment accompaniment) {
+    return CategoryAccompanimentsCompanion(
+      lineNumber: Value(accompaniment.lineNumber),
+      accompanimentItemCode: Value(accompaniment.accompanimentItemCode),
+      accompanimentItemName: Value(accompaniment.accompanimentItemName),
+      accompanimentImageUrl: Value(accompaniment.accompanimentImageUrl),
+      accompanimentPrice: Value(accompaniment.accompanimentPrice),
+      discount: Value(accompaniment.discount),
+      enlargementItemCode: Value(accompaniment.enlargementItemCode),
+      enlargementDiscount: Value(accompaniment.enlargementDiscount),
+      categoryItemCode: Value(null), // Se asigna en el repositorio
     );
   }
 

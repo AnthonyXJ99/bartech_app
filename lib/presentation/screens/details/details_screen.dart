@@ -575,7 +575,7 @@ class _ProductCardState extends State<_ProductCard> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    "\$${(product.price).toStringAsFixed(0)}",
+                                    "CLP \$${(product.price).toStringAsFixed(0)}",
                                     style: TextStyle(
                                       fontSize: fontPrice - 4,
                                       color: Colors.grey,
@@ -585,7 +585,7 @@ class _ProductCardState extends State<_ProductCard> {
                                   ),
                                   SizedBox(width: 6),
                                   Text(
-                                    "\$${(product.price - (product.discount ?? 0)).toStringAsFixed(0)}",
+                                    "CLP \$${(product.price - (product.discount ?? 0)).toStringAsFixed(0)}",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: fontPrice,
@@ -595,7 +595,7 @@ class _ProductCardState extends State<_ProductCard> {
                                 ],
                               )
                             : Text(
-                                "\$${product.price.toStringAsFixed(0)}",
+                                "CLP \$${product.price.toStringAsFixed(0)}",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: fontPrice,

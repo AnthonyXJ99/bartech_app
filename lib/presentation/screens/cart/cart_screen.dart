@@ -126,7 +126,7 @@ class CartScreen extends StatelessWidget {
                                           const SizedBox(width: 12),
                                           if ((product.discount ?? 0) > 0)
                                             Text(
-                                              "\$${product.price.toStringAsFixed(0)}",
+                                              "CLP \$${product.price.toStringAsFixed(0)}",
                                               style: const TextStyle(
                                                 color: Colors.grey,
                                                 fontSize: 15,
@@ -137,7 +137,7 @@ class CartScreen extends StatelessWidget {
                                           if (product.discount! > 0)
                                             const SizedBox(width: 5),
                                           Text(
-                                            "\$${priceWithDiscount.toStringAsFixed(0)}",
+                                            "CLP \$${priceWithDiscount.toStringAsFixed(0)}",
                                             style: TextStyle(
                                               color: (product.discount ?? 0) > 0
                                                   ? Color(0xFFFBA63C)
@@ -248,7 +248,7 @@ class CartScreen extends StatelessWidget {
                                           ),
                                           const Spacer(),
                                           Text(
-                                            '\$${(acc['price'] * acc['quantity']).toStringAsFixed(0)}',
+                                            'CLP \$${(acc['price'] * acc['quantity']).toStringAsFixed(0)}',
                                             style: const TextStyle(
                                               fontSize: 13,
                                               color: Colors.black54,
@@ -273,7 +273,7 @@ class CartScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  "\$${subtotal.toStringAsFixed(0)}",
+                                  "CLP \$${subtotal.toStringAsFixed(0)}",
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
@@ -309,7 +309,7 @@ class CartScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "\$${state.subtotal.toStringAsFixed(0)}",
+                          "CLP \$${state.subtotal.toStringAsFixed(0)}",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 32,

@@ -59,4 +59,10 @@ class ProductCategoriesService {
     final res = await _dio.get('/api/ProductCategories/Groups/$groupCode');
     return (res.data as List).map((e) => ProductCategory.fromJson(e)).toList();
   }
+
+  // GET /api/ProductCategories/with-accompaniments
+  Future<List<ProductCategory>> getAllWithAccompaniments() async {
+    final res = await _dio.get('/api/ProductCategories/with-accompaniments');
+    return (res.data as List).map((e) => ProductCategory.fromJson(e)).toList();
+  }
 }

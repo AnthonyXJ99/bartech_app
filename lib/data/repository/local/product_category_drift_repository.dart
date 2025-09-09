@@ -18,6 +18,24 @@ class ProductCategoryDriftRepository {
     });
   }
 
+  // Insertar categorías con acompañamientos desde API
+  Future<void> insertProductCategoriesWithAccompaniments(List<ApiModels.ProductCategory> categories) async {
+    await _database.transaction(() async {
+      for (final category in categories) {
+        // Insertar categoría principal
+        final categoryCompanion = DriftHelpers.productCategoryFromApi(category);
+        final categoryId = await _database.insertProductCategory(categoryCompanion);
+
+        // Insertar acompañamientos y crear relaciones
+        for (final accompaniment in category.accompaniments ?? []) {
+          final accompanimentCompanion = DriftHelpers.categoryAccompanimentFromApi(accompaniment);
+          final accompanimentId = await _database.insertCategoryAccompaniment(accompanimentCompanion);
+          await _database.linkCategoryToAccompaniment(categoryId, accompanimentId);
+        }
+      }
+    });
+  }
+
   // Obtener todas las categorías
   Future<List<ApiModels.ProductCategory>> getAllProductCategories() async {
     final categoryEntities = await _database.getAllProductCategories();
@@ -81,9 +99,16 @@ class ProductCategoryDriftRepository {
     );
   }
 
-  // Limpiar todas las categorías
+  // Limpiar todas las categorías y sus acompañamientos
   Future<void> clearAllCategories() async {
-    await _database.delete(_database.productCategories).go();
+    await _database.transaction(() async {
+      // Limpiar relaciones primero
+      await _database.delete(_database.categoryAccompanimentRelations).go();
+      
+      // Luego limpiar tablas principales
+      await _database.delete(_database.categoryAccompaniments).go();
+      await _database.delete(_database.productCategories).go();
+    });
   }
 
   // Actualizar categoría

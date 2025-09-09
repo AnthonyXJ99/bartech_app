@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ServerConfigService {
   static const String _baseUrlKey = 'server_base_url';
-  static const String _defaultBaseUrl = 'http://192.168.20.10:9095/';
+  static const String _defaultBaseUrl = 'http://192.168.18.239:5023/';
 
   static ServerConfigService? _instance;
   static ServerConfigService get instance {
@@ -28,18 +28,19 @@ class ServerConfigService {
   Future<bool> saveBaseUrl(String baseUrl) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Asegurar que termine con /
       String formattedUrl = baseUrl.trim();
       if (!formattedUrl.endsWith('/')) {
         formattedUrl += '/';
       }
-      
+
       // Asegurar que comience con http:// o https://
-      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+      if (!formattedUrl.startsWith('http://') &&
+          !formattedUrl.startsWith('https://')) {
         formattedUrl = 'http://$formattedUrl';
       }
-      
+
       final success = await prefs.setString(_baseUrlKey, formattedUrl);
       log('💾 ServerConfig - URL guardada: $formattedUrl - Success: $success');
       return success;

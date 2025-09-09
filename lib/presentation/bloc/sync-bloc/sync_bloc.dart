@@ -41,14 +41,14 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     on<SyncCategoriesEvent>((event, emit) async {
       emit(SyncLoading());
       try {
-        // 1. Recuperar categorías desde la API
-        final categories = await productCategoriesRepository.getAllCategories();
+        // 1. Recuperar categorías con acompañamientos desde la API
+        final categories = await productCategoriesRepository.getAllWithAccompaniments();
 
         // 2. Limpiar categorías existentes en Drift
         await productCategoryIsarRepository.clearAllCategories();
 
-        // 3. Guardar categorías en Drift
-        await productCategoryIsarRepository.insertProductCategories(categories);
+        // 3. Guardar categorías con acompañamientos en Drift
+        await productCategoryIsarRepository.insertProductCategoriesWithAccompaniments(categories);
 
         emit(SyncSuccess());
       } catch (e) {
@@ -61,7 +61,7 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
       try {
         // 1. Recuperar productos y categorías desde la API
         final products = await productsRepository.getAllProducts();
-        final categories = await productCategoriesRepository.getAllCategories();
+        final categories = await productCategoriesRepository.getAllWithAccompaniments();
 
         // 2. Limpiar datos existentes en Drift
         await productsIsarRepository.clearAllProducts();
@@ -70,8 +70,8 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
         // 3. Guardar productos en Drift (sin conversión)
         await productsIsarRepository.insertProducts(products);
 
-        // 4. Guardar categorías en Drift
-        await productCategoryIsarRepository.insertProductCategories(categories);
+        // 4. Guardar categorías con acompañamientos en Drift
+        await productCategoryIsarRepository.insertProductCategoriesWithAccompaniments(categories);
 
         emit(SyncSuccess());
 
